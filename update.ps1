@@ -1,16 +1,20 @@
+#!/usr/bin/env pwsh
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+
 $gradleVersion = '7.6.6'
 $sha = $(Invoke-RestMethod -Uri https://downloads.gradle.org/distributions/gradle-${gradleVersion}-bin.zip.sha256)
 
 $wc = [System.Net.WebClient]::new()
-$graal17Version = $(((Invoke-WebRequest "https://api.github.com/repos/graalvm/graalvm-ce-builds/releases?per_page=12&page=1" | ConvertFrom-Json).tag_name | Select-String -Pattern "jdk-17" | Select-Object -First 1).ToString().Replace("jdk-", ""))
+$graal17Version = $(((Invoke-WebRequest "https://api.github.com/repos/graalvm/graalvm-ce-builds/releases?per_page=20&page=1" | ConvertFrom-Json).tag_name | Select-String -Pattern "jdk-17" | Select-Object -First 1).ToString().Replace("jdk-", ""))
 $graal17amd64Hash = (Get-FileHash -Algorithm SHA256 -InputStream ($wc.OpenRead("https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${graal17Version}/graalvm-community-jdk-${graal17Version}_linux-x64_bin.tar.gz"))).Hash.ToLower()
 $graal17aarch64Hash = (Get-FileHash -Algorithm SHA256 -InputStream ($wc.OpenRead("https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${graal17Version}/graalvm-community-jdk-${graal17Version}_linux-aarch64_bin.tar.gz"))).Hash.ToLower()
 
-$graal21Version = $(((Invoke-WebRequest "https://api.github.com/repos/graalvm/graalvm-ce-builds/releases?per_page=12&page=1" | ConvertFrom-Json).tag_name | Select-String -Pattern "jdk-21" | Select-Object -First 1).ToString().Replace("jdk-", ""))
+$graal21Version = $(((Invoke-WebRequest "https://api.github.com/repos/graalvm/graalvm-ce-builds/releases?per_page=20&page=1" | ConvertFrom-Json).tag_name | Select-String -Pattern "jdk-21" | Select-Object -First 1).ToString().Replace("jdk-", ""))
 $graal21amd64Hash = (Get-FileHash -Algorithm SHA256 -InputStream ($wc.OpenRead("https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${graal21Version}/graalvm-community-jdk-${graal21Version}_linux-x64_bin.tar.gz"))).Hash.ToLower()
 $graal21aarch64Hash = (Get-FileHash -Algorithm SHA256 -InputStream ($wc.OpenRead("https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${graal21Version}/graalvm-community-jdk-${graal21Version}_linux-aarch64_bin.tar.gz"))).Hash.ToLower()
 
-$graal24Version = $(((Invoke-WebRequest "https://api.github.com/repos/graalvm/graalvm-ce-builds/releases?per_page=12&page=1" | ConvertFrom-Json).tag_name | Select-String -Pattern "jdk-24" | Select-Object -First 1).ToString().Replace("jdk-", ""))
+$graal24Version = $(((Invoke-WebRequest "https://api.github.com/repos/graalvm/graalvm-ce-builds/releases?per_page=20&page=1" | ConvertFrom-Json).tag_name | Select-String -Pattern "jdk-24" | Select-Object -First 1).ToString().Replace("jdk-", ""))
 $graal24amd64Hash = (Get-FileHash -Algorithm SHA256 -InputStream ($wc.OpenRead("https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${graal24Version}/graalvm-community-jdk-${graal24Version}_linux-x64_bin.tar.gz"))).Hash.ToLower()
 $graal24aarch64Hash = (Get-FileHash -Algorithm SHA256 -InputStream ($wc.OpenRead("https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${graal24Version}/graalvm-community-jdk-${graal24Version}_linux-aarch64_bin.tar.gz"))).Hash.ToLower()
 

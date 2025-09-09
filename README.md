@@ -1,86 +1,54 @@
-# docker-gradle
+# Gradle Docker Image
 
-## Supported tags and respective Dockerfile links
+[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](/LICENSE)
+[![Build status](https://github.com/gradle/docker-gradle/workflows/GitHub%20CI/badge.svg)](https://github.com/gradle/docker-gradle/actions?query=workflow%3A%22GitHub+CI%22)
 
-* [jdk8, jdk8-jammy](https://github.com/keeganwitt/docker-gradle/blob/master/jdk8-jammy/Dockerfile)
-* [jdk8-corretto](https://github.com/keeganwitt/docker-gradle/blob/master/jdk8-corretto/Dockerfile)
-* [jdk8-ubi9](https://github.com/keeganwitt/docker-gradle/blob/master/jdk8-ubi9/Dockerfile)
-* [jdk11, jdk11-noble](https://github.com/keeganwitt/docker-gradle/blob/master/jdk11-noble/Dockerfile)
-* [jdk11-jammy](https://github.com/keeganwitt/docker-gradle/blob/master/jdk11-jammy/Dockerfile)
-* [jdk11-alpine](https://github.com/keeganwitt/docker-gradle/blob/master/jdk11-alpine/Dockerfile)
-* [jdk11, jdk11-corretto](https://github.com/keeganwitt/docker-gradle/blob/master/jdk11-corretto/Dockerfile)
-* [jdk11-ubi9](https://github.com/keeganwitt/docker-gradle/blob/master/jdk11-ubi9/Dockerfile)
-* [jdk17, jdk17-noble](https://github.com/keeganwitt/docker-gradle/blob/master/jdk17-noble/Dockerfile)
-* [jdk17-jammy](https://github.com/keeganwitt/docker-gradle/blob/master/jdk17-jammy/Dockerfile)
-* [jdk17-alpine](https://github.com/keeganwitt/docker-gradle/blob/master/jdk17-alpine/Dockerfile)
-* [jdk17-corretto](https://github.com/keeganwitt/docker-gradle/blob/master/jdk17-corretto/Dockerfile)
-* [jdk17-ubi9](https://github.com/keeganwitt/docker-gradle/blob/master/jdk17-ubi9/Dockerfile)
-* [jdk17-noble-graal](https://github.com/keeganwitt/docker-gradle/blob/master/jdk17-noble-graal/Dockerfile)
+The official Docker image for [Gradle](https://gradle.org/).
+Maintained by the [Gradle team](https://github.com/gradle/docker-gradle) as an [Official Image](https://github.com/docker-library/official-images). Thanks to [@keeganwitt](https://github.com/keeganwitt) for his years of stewardship.
 
-### lts-and-current images
+[Gradle](https://gradle.org/) is a fast, dependable, and adaptable open-source build automation tool with an elegant and extensible declarative build language.
 
-Gradle's support for new Java releases historically has lagged for multiple months.
-This means most users wanting to use the latest Java release will need to do so using toolchains.
-Toolchains are 
-documented [here](https://docs.gradle.org/current/userguide/toolchains.html) and [here](https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html#configuration-toolchains) for GraalVM.
-The lts-and-current images provide both the latest LTS JDK and the latest (LTS or non-LTS) JDK.
-This allows Gradle to be launched with a supported JDK (the latest LTS release)
-and configure the compilation using toolchains to use the latest current JDK.
-This is done by putting the content below in `/home/gradle/.gradle/gradle.properties`.
-```properties
-org.gradle.java.installations.auto-detect=false
-org.gradle.java.installations.auto-download=false
-org.gradle.java.installations.fromEnv=JAVA_LTS_HOME,JAVA_CURRENT_HOME
+## Supported Tags
+- **JDK 8** → [`jdk8`, `jdk8-jammy`](jdk8-jammy/Dockerfile), [`jdk8-corretto`](jdk8-corretto/Dockerfile), [`jdk8-ubi9`](jdk8-ubi9/Dockerfile)
+- **JDK 11** → [`jdk11`, `jdk11-jammy`](jdk11-jammy/Dockerfile), [`jdk11-alpine`](jdk11-alpine/Dockerfile), [`jdk11-corretto`](jdk11-corretto/Dockerfile), [`jdk11-ubi9`](jdk11-ubi9/Dockerfile)
+- **JDK 17** → [`jdk17`, `jdk17-noble`](jdk17-noble/Dockerfile), [`jdk17-jammy`](jdk17-jammy/Dockerfile), [`jdk17-alpine`](jdk17-alpine/Dockerfile), [`jdk17-corretto`](jdk17-corretto/Dockerfile), [`jdk17-ubi9`](jdk17-ubi9/Dockerfile), [`jdk17-noble-graal`](jdk17-noble-graal/Dockerfile), [`jdk17-jammy-graal`](jdk17-jammy-graal/Dockerfile)
+
+See all tags on [Docker Hub](https://hub.docker.com/_/gradle/tags).
+
+## Usage
+
+### Build a Gradle project
+
+```bash
+docker run --rm -u gradle \
+  -v "$PWD":/home/gradle/project \
+  -w /home/gradle/project \
+  gradle:latest gradle <task>
 ```
-The `JAVA_LTS_HOME` environment variable points to the path
-where the latest LTS JDK is installed and `JAVA_CURRENT_HOME` points to the latest current JDK.
-These may point to the same path if the latest JDK is an LTS release.
-## What is Gradle?
 
-[Gradle](https://gradle.org/) is a build tool with a focus on build automation and support for multi-language development. If you are building, testing, publishing, and deploying software on any platform, Gradle offers a flexible model that can support the entire development lifecycle from compiling and packaging code to publishing websites. Gradle has been designed to support build automation across multiple languages and platforms including Java, Scala, Android, C/C++, and Groovy, and is closely integrated with development tools and continuous integration servers including Eclipse, IntelliJ, and Jenkins.
+Replace `<task>` with your desired Gradle task, e.g., `build`.
 
-## How to use this image
+### Reusing the Gradle User Home
 
-If you are mounting a volume and the uid/gid running Docker is not *1000*, you should run as user *root* (`-u root`).
-*root* is also the default, so you can also simply not specify a user.
+To persist the [Gradle User Home](https://docs.gradle.org/current/userguide/directory_layout.html#dir:gradle_user_home) (including Gradle caches) between runs:
 
-### Building a Gradle project
+```bash
+docker volume create --name gradle-cache
+docker run --rm -u gradle \
+  -v gradle-cache:/home/gradle/.gradle \
+  -v "$PWD":/home/gradle/project \
+  -w /home/gradle/project gradle:latest gradle build
+```
 
-Run this from the directory of the Gradle project you want to build.
-
-#### Bash/Zsh
-
-`docker run --rm -u gradle -v "$PWD":/home/gradle/project -w /home/gradle/project gradle:latest gradle <gradle-task>`
-
-#### PowerShell
-
-`docker run --rm -u gradle -v "${pwd}:/home/gradle/project" -w /home/gradle/project gradle:latest gradle <gradle-task>`
-
-#### Windows CMD
-
-`docker run --rm -u gradle -v "%cd%:/home/gradle/project" -w /home/gradle/project gradle:latest gradle <gradle-task>`
-
-Note the above command runs using uid/gid 1000 (user *gradle*) to avoid running as root.
-
-### Reusing the Gradle cache
-
-The local Gradle cache can be reused across containers by creating a volume and mounting it to _/home/gradle/.gradle_.
 Note that sharing between concurrently running containers doesn't work currently
 (see [#851](https://github.com/gradle/gradle/issues/851)).
 
-Also, currently it's [not possible](https://github.com/moby/moby/issues/3465) to override the volume declaration of the parent.
-So if you are using this image as a base image and want the Gradle cache to be written into the next layer, you will need to use a new user (or use the `--gradle-user-home`/`-g` argument) so that a new cache is created that isn't mounted to a volume.
+Currently, it is [not possible](https://github.com/moby/moby/issues/3465) to override the volume declaration of the parent.
+If you are using this image as a base image and want the Gradle cache to be written into the next layer, you will need to use a new user (or use the `--gradle-user-home`/`-g` argument) so that a new cache is created that isn't mounted to a volume.
 
-```
-docker volume create --name gradle-cache
-docker run --rm -u gradle -v gradle-cache:/home/gradle/.gradle -v "$PWD":/home/gradle/project -w /home/gradle/project gradle:latest gradle <gradle-task>
-```
+## License
 
-## Instructions for a new Gradle release
+[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
-1. Run `update.sh` or `update.ps1`.
-1. Commit and push the changes.
-1. Update [official-images](https://github.com/docker-library/official-images) (and [docs](https://github.com/docker-library/docs) if appropriate).
-
----
-[![Build status badge](https://github.com/keeganwitt/docker-gradle/workflows/GitHub%20CI/badge.svg)](https://github.com/keeganwitt/docker-gradle/actions?query=workflow%3A%22GitHub+CI%22)
+© [Gradle Inc.](https://gradle.com) 2025
