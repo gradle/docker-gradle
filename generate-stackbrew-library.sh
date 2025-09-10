@@ -11,21 +11,24 @@ bashbrew --version > /dev/null
 
 branches=(
 	'master'
+	'8'
 	'7'
 	'6'
 )
 
-gitRemote="$(git remote -v | awk '/keeganwitt\/docker-gradle/ { print $1; exit }')"
+gitRemote="$(git remote -v | awk '/gradle\/docker-gradle/ { print $1; exit }')"
 
 cat <<-'EOH'
-	Maintainers: Keegan Witt <keeganwitt@gmail.com> (@keeganwitt)
-	GitRepo: https://github.com/keeganwitt/docker-gradle.git
+	Maintainers: Louis Jacomet <louis@gradle.com> (@ljacomet),
+	             Christoph Obexer <cobexer@gradle.com> (@cobexer),
+	             Keegan Witt <keeganwitt@gmail.com> (@keeganwitt)
+	GitRepo: https://github.com/gradle/docker-gradle.git
 EOH
 
 declare -A usedTags=() archesLookupCache=()
 for branch in "${branches[@]}"; do
 	case "$branch" in
-		master) major='8' ;;
+		master) major='9' ;;
 		*) major="$branch" ;;
 	esac
 
