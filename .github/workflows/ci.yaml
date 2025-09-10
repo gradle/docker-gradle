@@ -6,11 +6,13 @@ on:
       - master
       - '6'
       - '7'
+      - '8'
   pull_request:
     branches:
       - master
       - '6'
       - '7'
+      - '8'
 
 defaults:
   run:
@@ -22,13 +24,6 @@ jobs:
     strategy:
       matrix:
         directory:
-          - jdk8-jammy
-          - jdk8-corretto
-          - jdk8-ubi9
-          - jdk11-jammy
-          - jdk11-alpine
-          - jdk11-corretto
-          - jdk11-ubi9
           - jdk17-jammy
           - jdk17-noble
           - jdk17-alpine
@@ -62,7 +57,7 @@ jobs:
           docker build --tag "gradle:${{ matrix.directory }}" .
       - name: test
         env:
-          expectedGradleVersion: '8.14.3'
+          expectedGradleVersion: '9.0.0'
         run: |
           if [[ "${{ matrix.directory }}" = *-and-current* ]]; then
             javaVersion=$(grep 'JAVA_CURRENT_HOME=' ${{ matrix.directory }}/Dockerfile | grep --extended-regex --only-matching '[0-9]+')
