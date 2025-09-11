@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jdk-alpine
+FROM eclipse-temurin:11-jdk-alpine
 
 CMD ["gradle"]
 
