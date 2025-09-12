@@ -42,7 +42,7 @@ docker run --rm -u gradle \
 ```
 
 Note that sharing between concurrently running containers doesn't work currently
-(see [#851](https://github.com/gradle/gradle/issues/851)).
+(see [#851](https://github.com/gradle/gradle/issues/851#issuecomment-3285297673)).
 
 Currently, it is [not possible](https://github.com/moby/moby/issues/3465) to override the volume declaration of the parent.
 If you are using this image as a base image and want the Gradle cache to be written into the next layer, you will need to use a new user (or use the `--gradle-user-home`/`-g` argument) so that a new cache is created that isn't mounted to a volume.
