@@ -192,8 +192,8 @@ for branch in "${branches[@]}"; do
 			ubi)
 				tags+=(
 					'ubi'
-					"${versions[@]/%/-$jdk-ubi-$suite}" # "X.Y.Z-ubi9"
-					"ubi-$suite" # "ubi9"
+					"${versions[@]/%/-$jdk-ubi-$suite}" # "X.Y.Z-ubi10"
+					"ubi-$suite" # "ubi10"
 				)
 				;;
 			graal)

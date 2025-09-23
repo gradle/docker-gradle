@@ -1,30 +1,41 @@
-FROM amazoncorretto:24-al2023-jdk
+FROM eclipse-temurin:25-jdk-ubi10-minimal
 
 CMD ["gradle"]
 
 ENV GRADLE_HOME=/opt/gradle
 
 RUN set -o errexit -o nounset \
-    && dnf install -y \
+    && echo "Adding gradle user and group" \
+    && groupadd --system --gid 101 gradle \
+    && useradd --system --gid gradle --uid 101 --shell /bin/bash --create-home gradle \
+    && mkdir /home/gradle/.gradle \
+    && chown --recursive gradle:gradle /home/gradle \
+    && chmod --recursive o+rwx /home/gradle \
+    \
+    && echo "Symlinking root Gradle cache to gradle Gradle cache" \
+    && ln --symbolic /home/gradle/.gradle /root/.gradle
+
+VOLUME /home/gradle/.gradle
+
+WORKDIR /home/gradle
+
+RUN set -o errexit -o nounset \
+    && microdnf install -y \
         # common utilities
         make \
-        tar \
-        \
-        # Dockerfile dependencies
-        unzip \
-        wget \
-        which \
         \
         # Gradle dependencies
         findutils \
         \
+        # Dockerfile dependencies
+        unzip \
+        which \
+        \
         # VCS dependencies
         git \
         git-lfs \
-        mercurial \
         subversion \
-    && dnf clean all \
-    && rm -rf /var/cache/yum \
+    && microdnf clean all \
     \
     && echo "Testing common utilities" \
     && which awk \
@@ -42,23 +53,7 @@ RUN set -o errexit -o nounset \
     && echo "Testing VCSes" \
     && which git \
     && which git-lfs \
-    && which hg \
     && which svn
-
-RUN set -o errexit -o nounset \
-    && echo "Adding gradle user and group" \
-    && groupadd --system --gid 1000 gradle \
-    && useradd --system --gid gradle --uid 1000 --shell /bin/bash --create-home gradle \
-    && mkdir /home/gradle/.gradle \
-    && chown --recursive gradle:gradle /home/gradle \
-    && chmod --recursive o+rwx /home/gradle \
-    \
-    && echo "Symlinking root Gradle cache to gradle Gradle cache" \
-    && ln --symbolic /home/gradle/.gradle /root/.gradle
-
-VOLUME /home/gradle/.gradle
-
-WORKDIR /home/gradle
 
 ENV GRADLE_VERSION=9.1.0
 ARG GRADLE_DOWNLOAD_SHA256=a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806

@@ -80,54 +80,56 @@ RUN set -o errexit -o nounset \
     && which svn
 
 ENV JAVA_HOME=/opt/java/graalvm
-ENV JAVA_LTS_HOME=/opt/java/graalvm21
-ENV JAVA_CURRENT_HOME=/opt/java/graalvm24
+ENV JAVA_LTS_HOME=/opt/java/graalvm25
+ENV JAVA_CURRENT_HOME=/opt/java/graalvm25
 RUN set -o errexit -o nounset \
     && mkdir /opt/java \
     \
     && echo "Downloading LTS GraalVM" \
-    && JAVA_21_VERSION=21.0.2 \
-    && GRAALVM_21_AMD64_DOWNLOAD_SHA256=b048069aaa3a99b84f5b957b162cc181a32a4330cbc35402766363c5be76ae48 \
-    && GRAALVM_21_AARCH64_DOWNLOAD_SHA256=a34be691ce68f0acf4655c7c6c63a9a49ed276a11859d7224fd94fc2f657cd7a \
+    && JAVA_LTS_VERSION=25.0.0 \
+    && GRAALVM_LTS_AMD64_DOWNLOAD_SHA256=1862f2ce97387a303cae4c512cb21baf36fafd2457c3cbbc10d87db94b89d3dd \
+    && GRAALVM_LTS_AARCH64_DOWNLOAD_SHA256=6c3c8b7617006c5d174d9cf7d357ccfb4bae77a4df1294ee28084fcb6eea8921 \
     && ARCHITECTURE=$(dpkg --print-architecture) \
     && if [ "${ARCHITECTURE}" = "amd64" ]; then GRAALVM_ARCHITECTURE=linux-x64; fi \
     && if [ "${ARCHITECTURE}" = "arm64" ]; then GRAALVM_ARCHITECTURE=linux-aarch64; fi \
-    && GRAALVM_PKG=https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${JAVA_21_VERSION}/graalvm-community-jdk-${JAVA_21_VERSION}_${GRAALVM_ARCHITECTURE}_bin.tar.gz \
+    && GRAALVM_PKG=https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${JAVA_LTS_VERSION}/graalvm-community-jdk-${JAVA_LTS_VERSION}_${GRAALVM_ARCHITECTURE}_bin.tar.gz \
     && wget --no-verbose --output-document=graalvm.tar.gz "${GRAALVM_PKG}" \
     \
     && echo "Checking LTS GraalVM download hash" \
-    && if [ "${ARCHITECTURE}" = "amd64" ]; then GRAALVM_DOWNLOAD_SHA256="${GRAALVM_21_AMD64_DOWNLOAD_SHA256}"; fi \
-    && if [ "${ARCHITECTURE}" = "arm64" ]; then GRAALVM_DOWNLOAD_SHA256="${GRAALVM_21_AARCH64_DOWNLOAD_SHA256}"; fi \
+    && if [ "${ARCHITECTURE}" = "amd64" ]; then GRAALVM_DOWNLOAD_SHA256="${GRAALVM_LTS_AMD64_DOWNLOAD_SHA256}"; fi \
+    && if [ "${ARCHITECTURE}" = "arm64" ]; then GRAALVM_DOWNLOAD_SHA256="${GRAALVM_LTS_AARCH64_DOWNLOAD_SHA256}"; fi \
     && echo "${GRAALVM_DOWNLOAD_SHA256} *graalvm.tar.gz" | sha256sum --check - \
     \
     && echo "Installing LTS GraalVM" \
     && tar --extract --gunzip --file graalvm.tar.gz \
     && rm graalvm.tar.gz \
-    && mv graalvm-* /opt/java/graalvm21 \
+    && mv graalvm-* "${JAVA_LTS_HOME}" \
     \
     && echo "Downloading current GraalVM" \
-    && JAVA_24_VERSION=24.0.2 \
-    && GRAALVM_24_AMD64_DOWNLOAD_SHA256=6d62846c826ddb9307deec71e7661c26fa5a5e3985d7bb9005ea42163a390720 \
-    && GRAALVM_24_AARCH64_DOWNLOAD_SHA256=c54d951a858791483d58270ecbc0946f28c4742c7fac74a4ebb2764bbf66d6f5 \
-    && ARCHITECTURE=$(dpkg --print-architecture) \
-    && if [ "${ARCHITECTURE}" = "amd64" ]; then GRAALVM_ARCHITECTURE=linux-x64; fi \
-    && if [ "${ARCHITECTURE}" = "arm64" ]; then GRAALVM_ARCHITECTURE=linux-aarch64; fi \
-    && GRAALVM_PKG=https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${JAVA_24_VERSION}/graalvm-community-jdk-${JAVA_24_VERSION}_${GRAALVM_ARCHITECTURE}_bin.tar.gz \
-    && wget --no-verbose --output-document=graalvm.tar.gz "${GRAALVM_PKG}" \
-    \
-    && echo "Checking current GraalVM download hash" \
-    && if [ "${ARCHITECTURE}" = "amd64" ]; then GRAALVM_DOWNLOAD_SHA256="${GRAALVM_24_AMD64_DOWNLOAD_SHA256}"; fi \
-    && if [ "${ARCHITECTURE}" = "arm64" ]; then GRAALVM_DOWNLOAD_SHA256="${GRAALVM_24_AARCH64_DOWNLOAD_SHA256}"; fi \
-    && echo "${GRAALVM_DOWNLOAD_SHA256} *graalvm.tar.gz" | sha256sum --check - \
-    \
-    && echo "Installing current GraalVM" \
-    && tar --extract --gunzip --file graalvm.tar.gz \
-    && rm graalvm.tar.gz \
-    && mv graalvm-* /opt/java/graalvm24 \
+    && JAVA_CURRENT_VERSION=25.0.0 \
+    && GRAALVM_CURRENT_AMD64_DOWNLOAD_SHA256=1862f2ce97387a303cae4c512cb21baf36fafd2457c3cbbc10d87db94b89d3dd \
+    && GRAALVM_CURRENT_AARCH64_DOWNLOAD_SHA256=6c3c8b7617006c5d174d9cf7d357ccfb4bae77a4df1294ee28084fcb6eea8921 \
+    && if [ "${JAVA_LTS_VERSION}" != "${JAVA_CURRENT_VERSION}" ]; then \
+      ARCHITECTURE=$(dpkg --print-architecture) \
+      && if [ "${ARCHITECTURE}" = "amd64" ]; then GRAALVM_ARCHITECTURE=linux-x64; fi \
+      && if [ "${ARCHITECTURE}" = "arm64" ]; then GRAALVM_ARCHITECTURE=linux-aarch64; fi \
+      && GRAALVM_PKG=https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${JAVA_CURRENT_VERSION}/graalvm-community-jdk-${JAVA_CURRENT_VERSION}_${GRAALVM_ARCHITECTURE}_bin.tar.gz \
+      && wget --no-verbose --output-document=graalvm.tar.gz "${GRAALVM_PKG}" \
+      \
+      && echo "Checking current GraalVM download hash" \
+      && if [ "${ARCHITECTURE}" = "amd64" ]; then GRAALVM_DOWNLOAD_SHA256="${GRAALVM_CURRENT_AMD64_DOWNLOAD_SHA256}"; fi \
+      && if [ "${ARCHITECTURE}" = "arm64" ]; then GRAALVM_DOWNLOAD_SHA256="${GRAALVM_CURRENT_AARCH64_DOWNLOAD_SHA256}"; fi \
+      && echo "${GRAALVM_DOWNLOAD_SHA256} *graalvm.tar.gz" | sha256sum --check - \
+      \
+      && echo "Installing current GraalVM" \
+      && tar --extract --gunzip --file graalvm.tar.gz \
+      && rm graalvm.tar.gz \
+      && mv graalvm-* "${JAVA_CURRENT_HOME}"; \
+    fi \
     \
     && echo "Default Java to LTS GraalVM" \
-    && ln --symbolic /opt/java/graalvm21 /opt/java/graalvm \
-    && for bin in /opt/java/graalvm21/bin/*; do \
+    && ln --symbolic "${JAVA_LTS_HOME}" /opt/java/graalvm \
+    && for bin in "$JAVA_LTS_HOME/bin/"*; do \
         base="$(basename "$bin")"; \
         [ ! -e "/usr/bin/$base" ]; \
         update-alternatives --install "/usr/bin/${base}" "${base}" "${bin}" 1; \
