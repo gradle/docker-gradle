@@ -110,10 +110,6 @@ for branch in "${branches[@]}"; do
 	for dir in "${directories[@]}"; do
 		# shellcheck disable=SC2001
 		dir="$(echo "$dir" | sed -e 's/[[:space:]]*$//')"
-		if [ ! -d "$dir" ]; then
-			# skip directory that doesn't exist in this branch
-			continue
-		fi
 
 		dockerfile="$(git show "$commit:$dir/Dockerfile")"
 
