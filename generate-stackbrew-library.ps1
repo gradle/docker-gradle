@@ -52,7 +52,7 @@ GitCommit: $commit
         $jdkPart = ($dir -split '-')[0] -replace 'jdk', ''
         $jdkNum = if ($jdkPart -eq "" -or $dir -match 'jdk-lts-and-current') { 999 } else { [int]$jdkPart }
 
-        $primaryJdkSort = if ($jdkNum -in @(21, 17, 11, 8)) { 0 } else { 1 }
+        $primaryJdkSort = if ($jdkNum -in @(25, 21, 17, 11, 8)) { 0 } else { 1 }
         $secondaryJdkSort = if ($jdkNum -eq 999) { $jdkNum } else { -$jdkNum }
 
         $variantSort = 0 # Default for plain
