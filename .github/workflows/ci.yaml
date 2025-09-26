@@ -38,11 +38,11 @@ jobs:
           - jdk21-ubi9
           - jdk21-jammy-graal
           - jdk21-noble-graal
-          - jdk24-noble
-          - jdk24-alpine
-          - jdk24-corretto
-          - jdk24-ubi9
-          - jdk24-noble-graal
+          - jdk25-noble
+          - jdk25-alpine
+          - jdk25-corretto
+          - jdk25-ubi10
+          - jdk25-noble-graal
           - jdk-lts-and-current
           - jdk-lts-and-current-alpine
           - jdk-lts-and-current-corretto

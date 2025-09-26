@@ -1,10 +1,11 @@
-FROM eclipse-temurin:21-jdk-noble
+FROM eclipse-temurin:25-jdk-noble
 
-COPY --from=eclipse-temurin:24-jdk-noble /opt/java/openjdk /opt/java/openjdk24
+# We need this again when Java 26 comes out
+#COPY --from=eclipse-temurin:26-jdk-noble /opt/java/openjdk /opt/java/openjdk26
 RUN set -o errexit -o nounset \
-    && ln --symbolic /opt/java/openjdk /opt/java/openjdk21
-ENV JAVA_LTS_HOME=/opt/java/openjdk21
-ENV JAVA_CURRENT_HOME=/opt/java/openjdk24
+    && ln --symbolic /opt/java/openjdk /opt/java/openjdk25
+ENV JAVA_LTS_HOME=/opt/java/openjdk25
+ENV JAVA_CURRENT_HOME=/opt/java/openjdk25
 
 CMD ["gradle"]
 
@@ -37,6 +38,9 @@ RUN set -o errexit -o nounset \
     && apt-get install --yes --no-install-recommends \
         # common utilities
         make \
+        # https://github.com/adoptium/containers/issues/814
+        curl \
+        wget \
         \
         # Dockerfile dependencies
         unzip \

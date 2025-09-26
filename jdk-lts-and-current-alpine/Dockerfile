@@ -1,10 +1,11 @@
-FROM eclipse-temurin:21-jdk-alpine
+FROM eclipse-temurin:25-jdk-alpine
 
-COPY --from=eclipse-temurin:24-jdk-alpine /opt/java/openjdk /opt/java/openjdk24
+# We need this again when Java 26 comes out
+#COPY --from=eclipse-temurin:26-jdk-alpine /opt/java/openjdk /opt/java/openjdk26
 RUN set -o errexit -o nounset \
-    && ln -s /opt/java/openjdk /opt/java/openjdk21
-ENV JAVA_CURRENT_HOME=/opt/java/openjdk24
-ENV JAVA_LTS_HOME=/opt/java/openjdk21
+    && ln -s /opt/java/openjdk /opt/java/openjdk25
+ENV JAVA_CURRENT_HOME=/opt/java/openjdk25
+ENV JAVA_LTS_HOME=/opt/java/openjdk25
 
 CMD ["gradle"]
 
