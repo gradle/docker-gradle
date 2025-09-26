@@ -74,7 +74,7 @@ for branch in "${branches[@]}"; do
 				| [
 					# LTS JDK versions above non-LTS
 					(
-						if $jdk | IN(21, 17, 11, 8) then 0
+						if $jdk | IN(25, 21, 17, 11, 8) then 0
 						else 1 end
 					),
 					# JDK versions in descending version order
