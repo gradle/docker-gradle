@@ -45,15 +45,8 @@ jobs:
           - jdk21-ubi9
           - jdk21-jammy-graal
           - jdk21-noble-graal
-          - jdk24-noble
-          - jdk24-alpine
           - jdk24-corretto
-          - jdk24-ubi9
           - jdk24-noble-graal
-          - jdk-lts-and-current
-          - jdk-lts-and-current-alpine
-          - jdk-lts-and-current-corretto
-          - jdk-lts-and-current-graal
     steps:
       - name: checkout
         uses: actions/checkout@v4

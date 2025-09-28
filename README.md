@@ -14,16 +14,16 @@ Maintained by the [Gradle team](https://github.com/gradle/docker-gradle) as an [
 - **JDK 8** → [`jdk8`, `jdk8-jammy`](jdk8-jammy/Dockerfile), [`jdk8-corretto`](jdk8-corretto/Dockerfile), [`jdk8-ubi9`](jdk8-ubi9/Dockerfile)
 - **JDK 11** → [`jdk11`, `jdk11-jammy`](jdk11-jammy/Dockerfile), [`jdk11-alpine`](jdk11-alpine/Dockerfile), [`jdk11-corretto`](jdk11-corretto/Dockerfile), [`jdk11-ubi9`](jdk11-ubi9/Dockerfile)
 - **JDK 17** → [`jdk17`, `jdk17-noble`](jdk17-noble/Dockerfile), [`jdk17-jammy`](jdk17-jammy/Dockerfile), [`jdk17-alpine`](jdk17-alpine/Dockerfile), [`jdk17-corretto`](jdk17-corretto/Dockerfile), [`jdk17-ubi9`](jdk17-ubi9/Dockerfile), [`jdk17-noble-graal`](jdk17-noble-graal/Dockerfile), , [`jdk17-jammy-graal`](jdk17-jammy-graal/Dockerfile)
-- **JDK 21 (LTS)** → [`jdk21`, `jdk21-noble`](jdk21-noble/Dockerfile), [`jdk21-jammy`](jdk21-jammy/Dockerfile), [`jdk21-alpine`](jdk21-alpine/Dockerfile), [`jdk21-corretto`](jdk21-corretto/Dockerfile), [`jdk21-ubi9`, `ubi`](jdk21-ubi9/Dockerfile), [`jdk21-graal`](jdk21-noble-graal/Dockerfile), [`jdk21-jammy-graal`](jdk21-jammy-graal/Dockerfile)
-- **JDK 24 (Current)** → [`jdk24`, `jdk24-noble`](jdk24-noble/Dockerfile), [`jdk24-alpine`](jdk24-alpine/Dockerfile), [`jdk24-corretto`](jdk24-corretto/Dockerfile), [`jdk24-ubi9`, `ubi`](jdk24-ubi9/Dockerfile), [`jdk24-graal`](jdk24-noble-graal/Dockerfile)
+- **JDK 21** → [`jdk21`, `jdk21-noble`](jdk21-noble/Dockerfile), [`jdk21-jammy`](jdk21-jammy/Dockerfile), [`jdk21-alpine`](jdk21-alpine/Dockerfile), [`jdk21-corretto`](jdk21-corretto/Dockerfile), [`jdk21-ubi9`, `ubi`](jdk21-ubi9/Dockerfile), [`jdk21-graal`](jdk21-noble-graal/Dockerfile), [`jdk21-jammy-graal`](jdk21-jammy-graal/Dockerfile)
+- **JDK 24** → [`jdk24-corretto`](jdk24-corretto/Dockerfile), [`jdk24-graal`](jdk24-noble-graal/Dockerfile)
 
 See all tags on [Docker Hub](https://hub.docker.com/_/gradle/tags).
 
 ### Combo images
 
-Combo images are images where two different JDK versions are made available to Gradle: the latest LTS JDK and the latest (LTS or non-LTS) JDK. Gradle runs on the LTS JDK, while toolchains can target the latest JDK.
+> :warning: **Note:** As of the Java 25 release, no combo images are built for Gradle 8 any more, this section is retained to document the existing images only.
 
-- **Combo Images** → [`jdk-lts-and-current`](jdk-lts-and-current/Dockerfile), [`jdk-lts-and-current-alpine`](jdk-lts-and-current-alpine/Dockerfile), [`jdk-lts-and-current-corretto`](jdk-lts-and-current-corretto/Dockerfile), [`jdk-lts-and-current-graal`](jdk-lts-and-current-graal/Dockerfile)
+Combo images are images where two different JDK versions are made available to Gradle: the latest LTS JDK and the latest (LTS or non-LTS) JDK. Gradle runs on the LTS JDK, while toolchains can target the latest JDK.
 
 To achieve this, the following appears in the  `/home/gradle/.gradle/gradle.properties` file of the image:
 
