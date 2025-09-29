@@ -108,6 +108,7 @@ for branch in "${branches[@]}"; do
 
 	firstVersion=
 	for dir in "${directories[@]}"; do
+		echo "branch $branch dir: $dir" >&2
 		# shellcheck disable=SC2001
 		dir="$(echo "$dir" | sed -e 's/[[:space:]]*$//')"
 
@@ -219,6 +220,9 @@ for branch in "${branches[@]}"; do
 				*)
 					lts="${fromTag%%-*}"
 					currentFrom="$(awk <<<"$dockerfile" -F '[=[:space:]]+' 'toupper($1) == "COPY" && $2 == "--from" { print $3; exit }')"
+					if [ -z "$currentFrom" ]; then # if the current LTS is also the latest Java version, there may be no COPY --from
+						currentFrom="$from"
+					fi
 					currentFromTag="${currentFrom##*:}"
 					current="${currentFromTag%%-*}"
 					;;
@@ -251,6 +255,9 @@ for branch in "${branches[@]}"; do
 		if [ "$jdk" = 'jdk-lts-and-current' ] && [ "$variant" != 'graal' ]; then
 			# *technically*, we could re-use "currentFrom" that we scraped above, but there's a lot of conditional logic between here and there so it's safer to just re-scrape it
 			copyFrom="$(awk <<<"$dockerfile" -F '[=[:space:]]+' 'toupper($1) == "COPY" && $2 == "--from" { print $3; exit }')"
+			if [ -z "$copyFrom" ]; then # if the current LTS is also the latest Java version, there may be no COPY --from
+				copyFrom="$from"
+			fi
 			copyFromArches="${archesLookupCache[$copyFrom]:-}"
 			if [ -z "$copyFromArches" ]; then
 				copyFromArches="$(bashbrew cat --format '{{ join ", " .TagEntry.Architectures }}' "https://github.com/docker-library/official-images/raw/HEAD/library/$copyFrom")"
