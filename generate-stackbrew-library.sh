@@ -9,6 +9,20 @@ set -o errexit -o nounset -o pipefail
 jq --version > /dev/null
 bashbrew --version > /dev/null
 
+declare -A SUBSTITUTIONS=()
+
+while [[ "$#" -gt 0 ]]; do
+	case $1 in
+		--substitute) SUBSTITUTIONS["$2"]="$3"; shift 2 ; echo "WARNING: using substitution, the result can't be submitted to the official images repository" ;;
+		--help|-h) echo "Usage: ./generate-stackbrew-library.sh [options]
+Options:
+  --substitute <source_sha> <replacement_sha>  Substitute <source_sha> with <replacement_sha> during library generation (can be specified multiple times)
+  --help|-h.                                   Show this help message" >&2; exit 0 ;;
+		*) echo >&2 "error: unknown argument: $1"; exit 1 ;;
+	esac
+	shift
+done
+
 branches=(
 	'master'
 	'8'
@@ -33,6 +47,10 @@ for branch in "${branches[@]}"; do
 	esac
 
 	commit="$(git rev-parse "refs/remotes/$gitRemote/$branch")"
+	if [ -v "SUBSTITUTIONS[$commit]" ]; then
+		commit="${SUBSTITUTIONS[$commit]}"
+		echo "note: substituting commit $commit for branch $branch" >&2
+	fi
 	common="$(
 		cat <<-EOC
 			GitFetch: refs/heads/$branch
@@ -108,6 +126,7 @@ for branch in "${branches[@]}"; do
 
 	firstVersion=
 	for dir in "${directories[@]}"; do
+		echo "branch $branch dir: $dir" >&2
 		# shellcheck disable=SC2001
 		dir="$(echo "$dir" | sed -e 's/[[:space:]]*$//')"
 
@@ -219,6 +238,9 @@ for branch in "${branches[@]}"; do
 				*)
 					lts="${fromTag%%-*}"
 					currentFrom="$(awk <<<"$dockerfile" -F '[=[:space:]]+' 'toupper($1) == "COPY" && $2 == "--from" { print $3; exit }')"
+					if [ -z "$currentFrom" ]; then # if the current LTS is also the latest Java version, there may be no COPY --from
+						currentFrom="$from"
+					fi
 					currentFromTag="${currentFrom##*:}"
 					current="${currentFromTag%%-*}"
 					;;
@@ -251,6 +273,9 @@ for branch in "${branches[@]}"; do
 		if [ "$jdk" = 'jdk-lts-and-current' ] && [ "$variant" != 'graal' ]; then
 			# *technically*, we could re-use "currentFrom" that we scraped above, but there's a lot of conditional logic between here and there so it's safer to just re-scrape it
 			copyFrom="$(awk <<<"$dockerfile" -F '[=[:space:]]+' 'toupper($1) == "COPY" && $2 == "--from" { print $3; exit }')"
+			if [ -z "$copyFrom" ]; then # if the current LTS is also the latest Java version, there may be no COPY --from
+				copyFrom="$from"
+			fi
 			copyFromArches="${archesLookupCache[$copyFrom]:-}"
 			if [ -z "$copyFromArches" ]; then
 				copyFromArches="$(bashbrew cat --format '{{ join ", " .TagEntry.Architectures }}' "https://github.com/docker-library/official-images/raw/HEAD/library/$copyFrom")"
