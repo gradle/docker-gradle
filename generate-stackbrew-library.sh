@@ -9,6 +9,20 @@ set -o errexit -o nounset -o pipefail
 jq --version > /dev/null
 bashbrew --version > /dev/null
 
+declare -A SUBSTITUTIONS=()
+
+while [[ "$#" -gt 0 ]]; do
+	case $1 in
+		--substitute) SUBSTITUTIONS["$2"]="$3"; shift 2 ; echo "WARNING: using substitution, the result can't be submitted to the official images repository" ;;
+		--help|-h) echo "Usage: ./generate-stackbrew-library.sh [options]
+Options:
+  --substitute <source_sha> <replacement_sha>  Substitute <source_sha> with <replacement_sha> during library generation (can be specified multiple times)
+  --help|-h.                                   Show this help message" >&2; exit 0 ;;
+		*) echo >&2 "error: unknown argument: $1"; exit 1 ;;
+	esac
+	shift
+done
+
 branches=(
 	'master'
 	'8'
@@ -33,6 +47,10 @@ for branch in "${branches[@]}"; do
 	esac
 
 	commit="$(git rev-parse "refs/remotes/$gitRemote/$branch")"
+	if [ -v "SUBSTITUTIONS[$commit]" ]; then
+		commit="${SUBSTITUTIONS[$commit]}"
+		echo "note: substituting commit $commit for branch $branch" >&2
+	fi
 	common="$(
 		cat <<-EOC
 			GitFetch: refs/heads/$branch
