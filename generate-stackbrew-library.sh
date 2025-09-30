@@ -30,6 +30,13 @@ branches=(
 	'6'
 )
 
+# Tags that used to exist on master and have been retired there, but still exist on older branches.
+# Actively retiring them makes sure users don't suddenly get upgrades that downgrade the Gradle version.
+declare -A retiredTags=(
+	['jdk24-corretto-al2023']=1
+	['jdk24-graal-noble']=1
+)
+
 gitRemote="$(git remote -v | awk '/gradle\/docker-gradle/ { print $1; exit }')"
 
 cat <<-'EOH'
@@ -253,6 +260,10 @@ for branch in "${branches[@]}"; do
 		for tag in "${tags[@]}"; do
 			tag="${tag#-}" # remove those errant hyphen prefixes mentioned above
 			if [ -z "$tag" ] || [ -n "${usedTags[$tag]:-}" ]; then
+				continue
+			fi
+			if [ -n "${retiredTags[$tag]:-}" ]; then
+				echo "not generating retired tag '$tag' for $dir on branch $branch" >&2
 				continue
 			fi
 			usedTags[$tag]=1
