@@ -27,17 +27,18 @@ RUN set -o errexit -o nounset \
     && apt-get install --yes --no-install-recommends \
         # common utilities
         make \
+        curl \
+        wget \
+        tar \
         \
         # Gradle & Dockerfile dependencies
         binutils \
         ca-certificates \
-        curl \
         fontconfig \
         locales \
         p11-kit \
         tzdata \
         unzip \
-        wget \
         \
         # build dependencies
         gcc \
