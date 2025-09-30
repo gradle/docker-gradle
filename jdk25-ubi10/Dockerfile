@@ -23,6 +23,9 @@ RUN set -o errexit -o nounset \
     && microdnf install -y \
         # common utilities
         make \
+        curl \
+        wget \
+        tar \
         \
         # Gradle dependencies
         findutils \

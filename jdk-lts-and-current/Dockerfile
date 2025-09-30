@@ -38,9 +38,9 @@ RUN set -o errexit -o nounset \
     && apt-get install --yes --no-install-recommends \
         # common utilities
         make \
-        # https://github.com/adoptium/containers/issues/814
         curl \
         wget \
+        tar \
         \
         # Dockerfile dependencies
         unzip \

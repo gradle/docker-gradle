@@ -8,11 +8,12 @@ RUN set -o errexit -o nounset \
     && dnf install -y \
         # common utilities
         make \
+        curl-minimal \
+        wget \
         tar \
         \
         # Dockerfile dependencies
         unzip \
-        wget \
         which \
         \
         # Gradle dependencies
