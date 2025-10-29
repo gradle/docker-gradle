@@ -76,14 +76,6 @@ _sed "s/JAVA_VERSION=[^ ]+/JAVA_VERSION=${graal24Version}/" ./jdk24-noble-graal/
 _sed "s/GRAALVM_AMD64_DOWNLOAD_SHA256=[^ ]+/GRAALVM_AMD64_DOWNLOAD_SHA256=${graal24amd64Sha}/" ./jdk24-noble-graal/Dockerfile
 _sed "s/GRAALVM_AARCH64_DOWNLOAD_SHA256=[^ ]+/GRAALVM_AARCH64_DOWNLOAD_SHA256=${graal24aarch64Sha}/" ./jdk24-noble-graal/Dockerfile
 
-_sed "s/JAVA_21_VERSION=[^ ]+/JAVA_21_VERSION=${graal21Version}/" ./jdk-lts-and-current-graal/Dockerfile
-_sed "s/GRAALVM_21_AMD64_DOWNLOAD_SHA256=[^ ]+/GRAALVM_21_AMD64_DOWNLOAD_SHA256=${graal21amd64Sha}/" ./jdk-lts-and-current-graal/Dockerfile
-_sed "s/GRAALVM_21_AARCH64_DOWNLOAD_SHA256=[^ ]+/GRAALVM_21_AARCH64_DOWNLOAD_SHA256=${graal21aarch64Sha}/" ./jdk-lts-and-current-graal/Dockerfile
-_sed "s/JAVA_24_VERSION=[^ ]+/JAVA_24_VERSION=${graal24Version}/" ./jdk-lts-and-current-graal/Dockerfile
-_sed "s/GRAALVM_24_AMD64_DOWNLOAD_SHA256=[^ ]+/GRAALVM_24_AMD64_DOWNLOAD_SHA256=${graal24amd64Sha}/" ./jdk-lts-and-current-graal/Dockerfile
-_sed "s/GRAALVM_24_AARCH64_DOWNLOAD_SHA256=[^ ]+/GRAALVM_24_AARCH64_DOWNLOAD_SHA256=${graal24aarch64Sha}/" ./jdk-lts-and-current-graal/Dockerfile
-
-
 echo "Latest Graal 24 version is ${graal24Version}"
 echo "Graal 24 AMD64 hash is ${graal24amd64Sha}"
 echo "Graal 24 AARCH64 hash is ${graal24aarch64Sha}"

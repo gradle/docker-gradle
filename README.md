@@ -15,7 +15,7 @@ Maintained by the [Gradle team](https://github.com/gradle/docker-gradle) as an [
 - **JDK 11** → [`jdk11`, `jdk11-jammy`](jdk11-jammy/Dockerfile), [`jdk11-alpine`](jdk11-alpine/Dockerfile), [`jdk11-corretto`](jdk11-corretto/Dockerfile), [`jdk11-ubi9`](jdk11-ubi9/Dockerfile)
 - **JDK 17** → [`jdk17`, `jdk17-noble`](jdk17-noble/Dockerfile), [`jdk17-jammy`](jdk17-jammy/Dockerfile), [`jdk17-alpine`](jdk17-alpine/Dockerfile), [`jdk17-corretto`](jdk17-corretto/Dockerfile), [`jdk17-ubi9`](jdk17-ubi9/Dockerfile), [`jdk17-noble-graal`](jdk17-noble-graal/Dockerfile), , [`jdk17-jammy-graal`](jdk17-jammy-graal/Dockerfile)
 - **JDK 21** → [`jdk21`, `jdk21-noble`](jdk21-noble/Dockerfile), [`jdk21-jammy`](jdk21-jammy/Dockerfile), [`jdk21-alpine`](jdk21-alpine/Dockerfile), [`jdk21-corretto`](jdk21-corretto/Dockerfile), [`jdk21-ubi9`, `ubi`](jdk21-ubi9/Dockerfile), [`jdk21-graal`](jdk21-noble-graal/Dockerfile), [`jdk21-jammy-graal`](jdk21-jammy-graal/Dockerfile)
-- **JDK 24** → [`jdk24-corretto`](jdk24-corretto/Dockerfile), [`jdk24-graal`](jdk24-noble-graal/Dockerfile)
+- **JDK 24** → [`jdk24-graal`](jdk24-noble-graal/Dockerfile)
 
 See all tags on [Docker Hub](https://hub.docker.com/_/gradle/tags).
 

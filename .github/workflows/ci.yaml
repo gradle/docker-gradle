@@ -45,7 +45,6 @@ jobs:
           - jdk21-ubi9
           - jdk21-jammy-graal
           - jdk21-noble-graal
-          - jdk24-corretto
           - jdk24-noble-graal
     steps:
       - name: checkout
