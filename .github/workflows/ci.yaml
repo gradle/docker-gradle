@@ -30,6 +30,7 @@ jobs:
           - jdk17-noble
           - jdk17-alpine
           - jdk17-corretto
+          - jdk17-ubi10
           - jdk17-ubi9
           - jdk17-jammy-graal
           - jdk17-noble-graal
@@ -37,6 +38,7 @@ jobs:
           - jdk21-noble
           - jdk21-alpine
           - jdk21-corretto
+          - jdk21-ubi10
           - jdk21-ubi9
           - jdk21-jammy-graal
           - jdk21-noble-graal
