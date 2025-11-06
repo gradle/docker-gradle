@@ -37,6 +37,7 @@ RUN set -o errexit -o nounset \
       curl \
       wget \
       tar \
+      unzip \
       \
       # VCSes
       breezy \
@@ -75,7 +76,7 @@ RUN set -o errexit -o nounset \
     && echo "${GRADLE_DOWNLOAD_SHA256} *gradle.zip" | sha256sum -c - \
     \
     && echo "Installing Gradle" \
-    && unzip gradle.zip \
+    && unzip -DD gradle.zip \
     && rm gradle.zip \
     && mv "gradle-${GRADLE_VERSION}" "${GRADLE_HOME}/" \
     && ln -s "${GRADLE_HOME}/bin/gradle" /usr/bin/gradle
