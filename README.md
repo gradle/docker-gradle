@@ -15,7 +15,7 @@ Maintained by the [Gradle team](https://github.com/gradle/docker-gradle) as an [
 - **JDK 11** → [`jdk11`, `jdk11-noble`](https://github.com/gradle/docker-gradle/tree/8/jdk11-noble/Dockerfile), [`jdk11-jammy`](https://github.com/gradle/docker-gradle/tree/8/jdk11-jammy/Dockerfile), [`jdk11-alpine`](https://github.com/gradle/docker-gradle/tree/8/jdk11-alpine/Dockerfile), [`jdk11-corretto`](https://github.com/gradle/docker-gradle/tree/8/jdk11-corretto/Dockerfile), [`jdk11-ubi9`](https://github.com/gradle/docker-gradle/tree/8/jdk11-ubi9/Dockerfile)
 - **JDK 17** → [`jdk17`, `jdk17-noble`](jdk17-noble/Dockerfile), [`jdk17-jammy`](jdk17-jammy/Dockerfile), [`jdk17-alpine`](jdk17-alpine/Dockerfile), [`jdk17-corretto`](jdk17-corretto/Dockerfile), [`jdk17-ubi9`](jdk17-ubi9/Dockerfile), [`jdk17-noble-graal`](jdk17-noble-graal/Dockerfile)
 - **JDK 21** → [`jdk21`, `jdk21-noble`](jdk21-noble/Dockerfile), [`jdk21-jammy`](jdk21-jammy/Dockerfile), [`jdk21-alpine`](jdk21-alpine/Dockerfile), [`jdk21-corretto`](jdk21-corretto/Dockerfile), [`jdk21-ubi9`](jdk21-ubi9/Dockerfile), [`jdk21-graal`](jdk21-noble-graal/Dockerfile)
-- **JDK 25 (LTS)** → [`jdk25`, `jdk25-noble`, `latest`](jdk25/Dockerfile), [`jdk25-alpine`, `alpine`](jdk25-alpine/Dockerfile), [`jdk25-corretto`, `corretto`](jdk25-corretto/Dockerfile), [`jdk25-ubi10`, `ubi`](jdk25-ubi10/Dockerfile), [`jdk25-graal`, `graal`](jdk25-noble-graal/Dockerfile)
+- **JDK 25 (LTS)** → [`jdk25`, `jdk25-noble`, `latest`](jdk25-noble/Dockerfile), [`jdk25-alpine`, `alpine`](jdk25-alpine/Dockerfile), [`jdk25-corretto`, `corretto`](jdk25-corretto/Dockerfile), [`jdk25-ubi10`, `ubi`](jdk25-ubi10/Dockerfile), [`jdk25-graal`, `graal`](jdk25-noble-graal/Dockerfile)
 
 See all tags on [Docker Hub](https://hub.docker.com/_/gradle/tags).
 
