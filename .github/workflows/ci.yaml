@@ -1,4 +1,6 @@
 name: GitHub CI
+permissions:
+  contents: read
 
 on:
   push:
