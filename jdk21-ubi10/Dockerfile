@@ -1,31 +1,44 @@
-FROM amazoncorretto:25-al2023-jdk
+FROM eclipse-temurin:21-jdk-ubi10-minimal
 
 CMD ["gradle"]
 
 ENV GRADLE_HOME=/opt/gradle
 
 RUN set -o errexit -o nounset \
-    && dnf install -y \
+    && echo "Adding gradle user and group" \
+    && groupadd --system --gid 101 gradle \
+    && useradd --system --gid gradle --uid 101 --shell /bin/bash --create-home gradle \
+    && mkdir /home/gradle/.gradle \
+    && chown --recursive gradle:gradle /home/gradle \
+    && chmod --recursive o+rwx /home/gradle \
+    \
+    && echo "Symlinking root Gradle cache to gradle Gradle cache" \
+    && ln --symbolic /home/gradle/.gradle /root/.gradle
+
+VOLUME /home/gradle/.gradle
+
+WORKDIR /home/gradle
+
+RUN set -o errexit -o nounset \
+    && microdnf install -y \
         # common utilities
         make \
         curl-minimal \
         wget \
         tar \
         \
+        # Gradle dependencies
+        findutils \
+        \
         # Dockerfile dependencies
         unzip \
         which \
         \
-        # Gradle dependencies
-        findutils \
-        \
         # VCS dependencies
         git \
         git-lfs \
-        mercurial \
         subversion \
-    && dnf clean all \
-    && rm -rf /var/cache/yum \
+    && microdnf clean all \
     \
     && echo "Testing common utilities" \
     && which awk \
@@ -43,23 +56,7 @@ RUN set -o errexit -o nounset \
     && echo "Testing VCSes" \
     && which git \
     && which git-lfs \
-    && which hg \
     && which svn
-
-RUN set -o errexit -o nounset \
-    && echo "Adding gradle user and group" \
-    && groupadd --system --gid 1000 gradle \
-    && useradd --system --gid gradle --uid 1000 --shell /bin/bash --create-home gradle \
-    && mkdir /home/gradle/.gradle \
-    && chown --recursive gradle:gradle /home/gradle \
-    && chmod --recursive o+rwx /home/gradle \
-    \
-    && echo "Symlinking root Gradle cache to gradle Gradle cache" \
-    && ln --symbolic /home/gradle/.gradle /root/.gradle
-
-VOLUME /home/gradle/.gradle
-
-WORKDIR /home/gradle
 
 ENV GRADLE_VERSION=9.2.0
 ARG GRADLE_DOWNLOAD_SHA256=df67a32e86e3276d011735facb1535f64d0d88df84fa87521e90becc2d735444
@@ -71,7 +68,7 @@ RUN set -o errexit -o nounset \
     && echo "${GRADLE_DOWNLOAD_SHA256} *gradle.zip" | sha256sum --check - \
     \
     && echo "Installing Gradle" \
-    && unzip gradle.zip \
+    && unzip -DD gradle.zip \
     && rm gradle.zip \
     && mv "gradle-${GRADLE_VERSION}" "${GRADLE_HOME}/" \
     && ln --symbolic "${GRADLE_HOME}/bin/gradle" /usr/bin/gradle
