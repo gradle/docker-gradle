@@ -71,8 +71,11 @@ RUN set -o errexit -o nounset \
 
 USER gradle
 
-RUN set -o errexit -o nounset \
+RUN --mount=type=tmpfs,target=/tmp set -o errexit -o nounset \
     && echo "Testing Gradle installation" \
-    && gradle --stacktrace --debug --version
+    && gradle --stacktrace --debug --version \
+    && touch /tmp/settings.gradle.kts \
+    && cd /tmp \
+    && gradle --stacktrace --no-daemon help
 
 USER root
