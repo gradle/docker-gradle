@@ -165,6 +165,7 @@ for branch in "${branches[@]}"; do
 
 		fromTag="${from##*:}"
 		suite="${fromTag%-jdk}"
+		suite="${suite%-minimal}" # UBI images use "-minimal" suffixes
 		suite="${suite##*-}" # "noble", "jammy", "al2023", etc
 
 		jdk="${dir%%-*}" # "jdk8", etc
