@@ -17,38 +17,43 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v5
         with:
           fetch-depth: 0 # we need all branches so we can read Dockerfiles from them
-      - name: Provision best available generate-stackbrew-library.sh
+      - name: Provision best available generate-stackbrew-library.sh and toolbox
         env:
           EVENT_NAME: ${{ github.event_name }}
           CURRENT_COMMIT: ${{ github.sha }}
           BASE_REF: ${{ github.event.pull_request.base.ref }}
-        # if the script was modified in the current PR, use that version; otherwise, use the version from master
         shell: bash
         run: |
+          # if the generate-stackbrew-library.sh was modified in the current PR, use that version; otherwise, use the version from master
           if [ "${EVENT_NAME}" == "pull_request" ] && [ "$(git diff --name-only "origin/$BASE_REF..$CURRENT_COMMIT" -- 'generate-stackbrew-library.sh' | wc -l)" -gt 0 ]; then
             echo "Using modified generate-stackbrew-library.sh"
           else
             echo "Using generate-stackbrew-library.sh from master branch"
             git checkout origin/master -- generate-stackbrew-library.sh
           fi
+          # if the toolbox Dockerfile was modified in the current PR, use that version; otherwise, use the version from master
+          if [ "${EVENT_NAME}" == "pull_request" ] && [ "$(git diff --name-only "origin/$BASE_REF..$CURRENT_COMMIT" -- 'toolbox/Dockerfile' | wc -l)" -gt 0 ]; then
+            echo "Using modified toolbox/Dockerfile"
+          else
+            echo "Using toolbox/Dockerfile from master branch"
+            git checkout origin/master -- toolbox/Dockerfile
+          fi
+      - run: docker build --tag gradle-dockerhub-toolbox -f toolbox/Dockerfile toolbox
       - name: Generate library file
-        uses: docker://bash:latest
-        with:
-          # See https://github.com/docker-library/bashbrew?tab=readme-ov-file#installing
-          args: |
-            -c "\
-              apk add --no-cache jq git curl ca-certificates && \
-              git config --global --add safe.directory '*' && \
-              curl -fsSL -o /usr/local/bin/bashbrew https://github.com/docker-library/bashbrew/releases/download/v0.1.13/bashbrew-amd64 && \
-              chmod +x /usr/local/bin/bashbrew && \
-              bashbrew --version && \
-              ./generate-stackbrew-library.sh ${BASE_SHA:+--substitute ${BASE_SHA} ${CURRENT_COMMIT}} > library-gradle \
-              "
+        run: |
+          docker run --rm \
+            -v "$PWD:/ws" \
+            -w /ws \
+            -e CURRENT_COMMIT \
+            -e BASE_SHA \
+            gradle-dockerhub-toolbox \
+            bash -c 'if [ -n "$BASE_SHA" ]; then ./generate-stackbrew-library.sh --substitute "$BASE_SHA" "$CURRENT_COMMIT"; else ./generate-stackbrew-library.sh; fi > library-gradle'
         env:
           CURRENT_COMMIT: ${{ github.sha }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -57,3 +62,35 @@ jobs:
         with:
           name: gradle
           path: library-gradle
+      - name: Compare library files
+        id: compare
+        run: |
+          curl -q -sS -o /dev/stdout "https://raw.githubusercontent.com/docker-library/official-images/refs/heads/master/library/gradle" | \
+            sed -E "s/GitCommit: .*/GitCommit: 0000000000000000000000000000000000000000/" > existing-library-gradle
+          sed -E "1d; s/GitCommit: .*/GitCommit: 0000000000000000000000000000000000000000/" library-gradle > updated-library-gradle
+          DIFF_OUTPUT=$(diff existing-library-gradle updated-library-gradle || :)
+          echo "$DIFF_OUTPUT"
+          echo "diff<<EOF" >> $GITHUB_OUTPUT
+          echo "$DIFF_OUTPUT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      - name: Comment PR with diff
+        if: github.event_name == 'pull_request' && steps.compare.outputs.diff != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const diff = `${{ steps.compare.outputs.diff }}`;
+            const body = `<details>
+            <summary>Library file diff (ignoring commit IDs)</summary>
+
+            \`\`\`diff
+            ${diff}
+            \`\`\`
+
+            </details>`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });

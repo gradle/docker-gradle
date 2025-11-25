@@ -76,7 +76,8 @@ for branch in "${branches[@]}"; do
 			# convert "git ls-tree" output to a list of directories that contain a Dockerfile
 			[
 				inputs
-				| select(endswith("/Dockerfile"))
+				# filter to only Dockerfiles, excluding the toolbox/ and hidden directories
+				| select(endswith("/Dockerfile") and ((startswith("toolbox/") or startswith(".")) | not))
 				| rtrimstr("/Dockerfile")
 			]
 			| sort_by(
@@ -219,7 +220,7 @@ for branch in "${branches[@]}"; do
 			ubi)
 				tags+=(
 					'ubi'
-					"${versions[@]/%/-$jdk-$suite}" # "X.Y.Z-ubi10"
+					"${versions[@]/%/-$jdk-$suite}" # "X.Y.Z-jdkNN-ubi10"
 					"$suite" # "ubi10"
 				)
 				;;
