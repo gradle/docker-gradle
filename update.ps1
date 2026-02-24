@@ -35,35 +35,38 @@ Write-Host "Graal 25 AMD64 hash is $graal25amd64Hash"
 Write-Host "Graal 25 AARCH64 hash is $graal25aarch64Hash"
 
 dir -Recurse -Filter Dockerfile | ForEach-Object {
-    (Get-Content -Path $_.FullName) -replace "ENV GRADLE_VERSION=.+$", "ENV GRADLE_VERSION=${gradleVersion}" | Set-Content $_.FullName
-    (Get-Content -Path $_.FullName) -replace "GRADLE_DOWNLOAD_SHA256=.+$", "GRADLE_DOWNLOAD_SHA256=${sha}" | Set-Content $_.FullName
-    if ($((Get-Item $_.FullName).Directory.Name) -eq "jdk17-noble-graal" -Or $((Get-Item $_.FullName).Directory.Name) -eq "jdk17-jammy-graal")
+    $content = Get-Content -Path $_.FullName
+    $content = $content -replace "ENV GRADLE_VERSION=.+$", "ENV GRADLE_VERSION=${gradleVersion}"
+    $content = $content -replace "GRADLE_DOWNLOAD_SHA256=.+$", "GRADLE_DOWNLOAD_SHA256=${sha}"
+    $dirName = $_.Directory.Name
+    if ($dirName -eq "jdk17-noble-graal" -Or $dirName -eq "jdk17-jammy-graal")
     {
-        (Get-Content -Path $_.FullName) -replace "JAVA_VERSION=[^ ]+", "JAVA_VERSION=${graal17Version}" | Set-Content $_.FullName
-        (Get-Content -Path $_.FullName) -replace "GRAALVM_AMD64_DOWNLOAD_SHA256=[^ ]+", "GRAALVM_AMD64_DOWNLOAD_SHA256=${graal17amd64Hash}" | Set-Content $_.FullName
-        (Get-Content -Path $_.FullName) -replace "GRAALVM_AARCH64_DOWNLOAD_SHA256=[^ ]+", "GRAALVM_AARCH64_DOWNLOAD_SHA256=${graal17aarch64Hash}" | Set-Content $_.FullName
+        $content = $content -replace "JAVA_VERSION=[^ ]+", "JAVA_VERSION=${graal17Version}"
+        $content = $content -replace "GRAALVM_AMD64_DOWNLOAD_SHA256=[^ ]+", "GRAALVM_AMD64_DOWNLOAD_SHA256=${graal17amd64Hash}"
+        $content = $content -replace "GRAALVM_AARCH64_DOWNLOAD_SHA256=[^ ]+", "GRAALVM_AARCH64_DOWNLOAD_SHA256=${graal17aarch64Hash}"
     }
-    elseif ($((Get-Item $_.FullName).Directory.Name) -eq "jdk21-noble-graal" -Or $((Get-Item $_.FullName).Directory.Name) -eq "jdk21-jammy-graal")
+    elseif ($dirName -eq "jdk21-noble-graal" -Or $dirName -eq "jdk21-jammy-graal")
     {
-        (Get-Content -Path $_.FullName) -replace "JAVA_VERSION=[^ ]+", "JAVA_VERSION=${graal21Version}" | Set-Content $_.FullName
-        (Get-Content -Path $_.FullName) -replace "GRAALVM_AMD64_DOWNLOAD_SHA256=[^ ]+", "GRAALVM_AMD64_DOWNLOAD_SHA256=${graal21amd64Hash}" | Set-Content $_.FullName
-        (Get-Content -Path $_.FullName) -replace "GRAALVM_AARCH64_DOWNLOAD_SHA256=[^ ]+", "GRAALVM_AARCH64_DOWNLOAD_SHA256=${graal21aarch64Hash}" | Set-Content $_.FullName
+        $content = $content -replace "JAVA_VERSION=[^ ]+", "JAVA_VERSION=${graal21Version}"
+        $content = $content -replace "GRAALVM_AMD64_DOWNLOAD_SHA256=[^ ]+", "GRAALVM_AMD64_DOWNLOAD_SHA256=${graal21amd64Hash}"
+        $content = $content -replace "GRAALVM_AARCH64_DOWNLOAD_SHA256=[^ ]+", "GRAALVM_AARCH64_DOWNLOAD_SHA256=${graal21aarch64Hash}"
     }
-    elseif ($((Get-Item $_.FullName).Directory.Name) -eq "jdk25-noble-graal")
+    elseif ($dirName -eq "jdk25-noble-graal")
     {
-        (Get-Content -Path $_.FullName) -replace "JAVA_VERSION=[^ ]+", "JAVA_VERSION=${graal25Version}" | Set-Content $_.FullName
-        (Get-Content -Path $_.FullName) -replace "GRAALVM_AMD64_DOWNLOAD_SHA256=[^ ]+", "GRAALVM_AMD64_DOWNLOAD_SHA256=${graal25amd64Hash}" | Set-Content $_.FullName
-        (Get-Content -Path $_.FullName) -replace "GRAALVM_AARCH64_DOWNLOAD_SHA256=[^ ]+", "GRAALVM_AARCH64_DOWNLOAD_SHA256=${graal25aarch64Hash}" | Set-Content $_.FullName
+        $content = $content -replace "JAVA_VERSION=[^ ]+", "JAVA_VERSION=${graal25Version}"
+        $content = $content -replace "GRAALVM_AMD64_DOWNLOAD_SHA256=[^ ]+", "GRAALVM_AMD64_DOWNLOAD_SHA256=${graal25amd64Hash}"
+        $content = $content -replace "GRAALVM_AARCH64_DOWNLOAD_SHA256=[^ ]+", "GRAALVM_AARCH64_DOWNLOAD_SHA256=${graal25aarch64Hash}"
     }
-    elseif ($((Get-Item $_.FullName).Directory.Name) -eq "jdk-lts-and-current-graal")
+    elseif ($dirName -eq "jdk-lts-and-current-graal")
     {
-        (Get-Content -Path $_.FullName) -replace "JAVA_LTS_VERSION=[^ ]+", "JAVA_LTS_VERSION=${graal25Version}" | Set-Content $_.FullName
-        (Get-Content -Path $_.FullName) -replace "GRAALVM_LTS_AMD64_DOWNLOAD_SHA256=[^ ]+", "GRAALVM_LTS_AMD64_DOWNLOAD_SHA256=${graal25amd64Hash}" | Set-Content $_.FullName
-        (Get-Content -Path $_.FullName) -replace "GRAALVM_LTS_AARCH64_DOWNLOAD_SHA256=[^ ]+", "GRAALVM_LTS_AARCH64_DOWNLOAD_SHA256=${graal25aarch64Hash}" | Set-Content $_.FullName
-        (Get-Content -Path $_.FullName) -replace "JAVA_CURRENT_VERSION=[^ ]+", "JAVA_CURRENT_VERSION=${graal25Version}" | Set-Content $_.FullName
-        (Get-Content -Path $_.FullName) -replace "GRAALVM_CURRENT_AMD64_DOWNLOAD_SHA256=[^ ]+", "GRAALVM_CURRENT_AMD64_DOWNLOAD_SHA256=${graal25amd64Hash}" | Set-Content $_.FullName
-        (Get-Content -Path $_.FullName) -replace "GRAALVM_CURRENT_AARCH64_DOWNLOAD_SHA256=[^ ]+", "GRAALVM_CURRENT_AARCH64_DOWNLOAD_SHA256=${graal25aarch64Hash}" | Set-Content $_.FullName
+        $content = $content -replace "JAVA_LTS_VERSION=[^ ]+", "JAVA_LTS_VERSION=${graal25Version}"
+        $content = $content -replace "GRAALVM_LTS_AMD64_DOWNLOAD_SHA256=[^ ]+", "GRAALVM_LTS_AMD64_DOWNLOAD_SHA256=${graal25amd64Hash}"
+        $content = $content -replace "GRAALVM_LTS_AARCH64_DOWNLOAD_SHA256=[^ ]+", "GRAALVM_LTS_AARCH64_DOWNLOAD_SHA256=${graal25aarch64Hash}"
+        $content = $content -replace "JAVA_CURRENT_VERSION=[^ ]+", "JAVA_CURRENT_VERSION=${graal25Version}"
+        $content = $content -replace "GRAALVM_CURRENT_AMD64_DOWNLOAD_SHA256=[^ ]+", "GRAALVM_CURRENT_AMD64_DOWNLOAD_SHA256=${graal25amd64Hash}"
+        $content = $content -replace "GRAALVM_CURRENT_AARCH64_DOWNLOAD_SHA256=[^ ]+", "GRAALVM_CURRENT_AARCH64_DOWNLOAD_SHA256=${graal25aarch64Hash}"
     }
+    $content | Set-Content $_.FullName
 }
 
 (Get-Content -Path .github/workflows/ci.yaml) -replace "expectedGradleVersion: .+", "expectedGradleVersion: '${gradleVersion}'" | Set-Content .github/workflows/ci.yaml
