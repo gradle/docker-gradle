@@ -14,7 +14,14 @@ $branches = @(
  '6'
 )
 
-$gitRemote = (git remote -v | Select-String 'gradle/docker-gradle' | ForEach-Object { $_.Line.Split()[0] })[0]
+$gitRemote = (git remote -v | Select-String 'gradle/docker-gradle' | ForEach-Object { $_.Line.Split()[0] } | Select-Object -First 1)
+if (-not $gitRemote) {
+    $gitRemote = (git remote -v | Select-String 'docker-gradle' | ForEach-Object { $_.Line.Split()[0] } | Select-Object -First 1)
+}
+if (-not $gitRemote) {
+    $gitRemote = "origin"
+}
+
 
 @"
 Maintainers: Louis Jacomet <louis@gradle.com> (@ljacomet),
