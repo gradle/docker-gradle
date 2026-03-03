@@ -23,19 +23,19 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0 # we need all branches so we can read Dockerfiles from them
-      - name: Provision best available generate-stackbrew-library.sh and toolbox
+      - name: Provision best available generate-stackbrew-library.py and toolbox
         env:
           EVENT_NAME: ${{ github.event_name }}
           CURRENT_COMMIT: ${{ github.sha }}
           BASE_REF: ${{ github.event.pull_request.base.ref }}
         shell: bash
         run: |
-          # if the generate-stackbrew-library.sh was modified in the current PR, use that version; otherwise, use the version from master
-          if [ "${EVENT_NAME}" == "pull_request" ] && [ "$(git diff --name-only "origin/$BASE_REF..$CURRENT_COMMIT" -- 'generate-stackbrew-library.sh' | wc -l)" -gt 0 ]; then
-            echo "Using modified generate-stackbrew-library.sh"
+          # if the generate-stackbrew-library.py was modified in the current PR, use that version; otherwise, use the version from master
+          if [ "${EVENT_NAME}" == "pull_request" ] && [ "$(git diff --name-only "origin/$BASE_REF..$CURRENT_COMMIT" -- 'generate-stackbrew-library.py' | wc -l)" -gt 0 ]; then
+            echo "Using modified generate-stackbrew-library.py"
           else
-            echo "Using generate-stackbrew-library.sh from master branch"
-            git checkout origin/master -- generate-stackbrew-library.sh
+            echo "Using generate-stackbrew-library.py from master branch"
+            git checkout origin/master -- generate-stackbrew-library.py
           fi
           # if the toolbox Dockerfile was modified in the current PR, use that version; otherwise, use the version from master
           if [ "${EVENT_NAME}" == "pull_request" ] && [ "$(git diff --name-only "origin/$BASE_REF..$CURRENT_COMMIT" -- 'toolbox/Dockerfile' | wc -l)" -gt 0 ]; then
@@ -53,7 +53,7 @@ jobs:
             -e CURRENT_COMMIT \
             -e BASE_SHA \
             gradle-dockerhub-toolbox \
-            bash -c 'if [ -n "$BASE_SHA" ]; then ./generate-stackbrew-library.sh --substitute "$BASE_SHA" "$CURRENT_COMMIT"; else ./generate-stackbrew-library.sh; fi > library-gradle'
+            bash -c 'if [ -n "$BASE_SHA" ]; then ./generate-stackbrew-library.py --substitute "$BASE_SHA" "$CURRENT_COMMIT"; else ./generate-stackbrew-library.py; fi > library-gradle'
         env:
           CURRENT_COMMIT: ${{ github.sha }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
