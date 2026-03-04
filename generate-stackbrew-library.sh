@@ -38,6 +38,9 @@ declare -A retiredTags=(
 )
 
 gitRemote="$(git remote -v | awk '/gradle\/docker-gradle/ { print $1; exit }')"
+[ -z "$gitRemote" ] && gitRemote="$(git remote -v | awk '/docker-gradle/ { print $1; exit }')"
+[ -z "$gitRemote" ] && gitRemote="origin"
+
 
 cat <<-'EOH'
 	Maintainers: Louis Jacomet <louis@gradle.com> (@ljacomet),
@@ -295,9 +298,17 @@ for branch in "${branches[@]}"; do
 				archesLookupCache[$copyFrom]="$copyFromArches"
 			fi
 			if [ "$arches" != "$copyFromArches" ]; then
-				# TODO implement set intersection logic here (only keeping arches supported by both)
-				echo >&2 "error: arches mismatch between $from and $copyFrom in $dir on branch $branch ('$arches' vs '$copyFromArches')"
-				exit 1
+				newArches="$(jq -rn --arg arches "$arches" --arg copyFromArches "$copyFromArches" '
+					($arches | split(", ")) as $a
+					| ($copyFromArches | split(", ")) as $b
+					| $a | map(select(. as $x | $b | index($x)))
+					| join(", ")
+				')"
+				if [ -z "$newArches" ]; then
+					echo >&2 "error: arches mismatch between $from and $copyFrom in $dir on branch $branch ('$arches' vs '$copyFromArches' results in an empty intersection)"
+					exit 1
+				fi
+				arches="$newArches"
 			fi
 		fi
 
