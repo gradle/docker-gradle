@@ -3,5 +3,6 @@
 *.zip
 .gradle/
 .idea/
+.vscode/
 build/
 desktop.ini
