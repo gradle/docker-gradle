@@ -1,7 +1,8 @@
 *.DS_Store
-desktop.ini
-.gradle/
-build/
-.idea/
 *.tar.gz
 *.zip
+.gradle/
+.idea/
+.vscode/
+build/
+desktop.ini
