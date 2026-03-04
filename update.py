@@ -3,9 +3,10 @@ import requests
 import re
 import os
 import hashlib
+import sys
 
 def get_gradle_version(base_version):
-    response = requests.get(f"https://services.gradle.org/versions/{base_version}")
+    response = requests.get(f"https://services.gradle.org/versions/{base_version}", timeout=10)
     response.raise_for_status()
     versions = response.json()
     # Filter versions
@@ -18,12 +19,12 @@ def get_gradle_version(base_version):
     return filtered_versions[-1]
 
 def get_sha256(url):
-    response = requests.get(url)
+    response = requests.get(url, timeout=10)
     response.raise_for_status()
     return response.text.strip()
 
 def get_graalvm_info(jdk_version):
-    response = requests.get("https://api.github.com/repos/graalvm/graalvm-ce-builds/releases?per_page=20&page=1")
+    response = requests.get("https://api.github.com/repos/graalvm/graalvm-ce-builds/releases?per_page=20&page=1", timeout=10)
     response.raise_for_status()
     releases = response.json()
     
@@ -38,7 +39,7 @@ def get_graalvm_info(jdk_version):
     return version
 
 def get_remote_sha256(url):
-    response = requests.get(url, stream=True)
+    response = requests.get(url, stream=True, timeout=10)
     response.raise_for_status()
     sha256_hash = hashlib.sha256()
     for chunk in response.iter_content(chunk_size=4096):
@@ -48,22 +49,23 @@ def get_remote_sha256(url):
 def update_file(filepath, pattern, replacement):
     if not os.path.exists(filepath):
         return
-    with open(filepath, 'r') as f:
+    with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
     
     new_content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
     
     if content != new_content:
-        with open(filepath, 'w') as f:
+        with open(filepath, 'w', encoding='utf-8') as f:
             f.write(new_content)
 
 def main():
-    if os.path.exists('version.txt'):
-        with open('version.txt', 'r') as f:
+    version_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'version.txt')
+    if os.path.exists(version_file):
+        with open(version_file, 'r', encoding='utf-8') as f:
             base_version_str = f.read().strip()
     else:
-        # Fallback if version.txt is not in the current directory
-        base_version_str = "9"
+        print(f"Error: {version_file} not found. Please ensure the script is run from the correct directory or the file exists.", file=sys.stderr)
+        sys.exit(1)
     
     base_version = int(base_version_str)
     gradle_version = get_gradle_version(base_version_str)
@@ -151,7 +153,7 @@ def main():
 
         for dir_name in ["jdk25-noble-graal"]:
             filepath = os.path.join(dir_name, "Dockerfile")
-            update_file(filepath, r"ENV JAVA_VERSION=[0-9.]+", f"ENV JAVA_VERSION={graal25_version}")
+            update_file(filepath, r"ENV JAVA_VERSION=\S+", f"ENV JAVA_VERSION={graal25_version}")
             update_file(filepath, r"GRAALVM_AMD64_DOWNLOAD_SHA256=\S+", f"GRAALVM_AMD64_DOWNLOAD_SHA256={graal25_amd64_sha}")
             update_file(filepath, r"GRAALVM_AARCH64_DOWNLOAD_SHA256=\S+", f"GRAALVM_AARCH64_DOWNLOAD_SHA256={graal25_aarch64_sha}")
 

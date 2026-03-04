@@ -4,25 +4,25 @@ import sys
 import os
 import re
 import argparse
-from collections import OrderedDict
+
 
 def run_command(command, input_str=None):
-    result = subprocess.run(command, input=input_str, capture_output=True, text=True, shell=isinstance(command, str))
+    result = subprocess.run(command, input=input_str, capture_output=True, text=True, shell=False, check=False)
     if result.returncode != 0:
         print(f"Error running command: {command}", file=sys.stderr)
         print(result.stderr, file=sys.stderr)
-        sys.exit(1)
+        result.check_returncode()
     return result.stdout
 
 def get_git_remote():
-    output = run_command("git remote -v")
+    output = run_command(["git", "remote", "-v"])
     for line in output.splitlines():
         if "gradle/docker-gradle" in line:
             return line.split()[0]
     return "origin"
 
 def get_directories(commit):
-    output = run_command(f"git ls-tree -r --name-only {commit}")
+    output = run_command(["git", "ls-tree", "-r", "--name-only", commit])
     files = output.splitlines()
     dirs = [os.path.dirname(f) for f in files if f.endswith("/Dockerfile") and not f.startswith("toolbox/") and not f.startswith(".")]
     
@@ -85,7 +85,7 @@ def main():
     if args.substitute:
         for src, repl in args.substitute:
             substitutions[src] = repl
-            print(f"WARNING: using substitution, the result can't be submitted to the official images repository", file=sys.stderr)
+            print("WARNING: using substitution, the result can't be submitted to the official images repository", file=sys.stderr)
 
     branches = ['master', '8', '7', '6']
     retired_tags = {
@@ -107,10 +107,10 @@ def main():
         major = '9' if branch == 'master' else branch
         
         try:
-            commit = run_command(f"git rev-parse refs/remotes/{git_remote}/{branch}").strip()
-        except:
+            commit = run_command(["git", "rev-parse", f"refs/remotes/{git_remote}/{branch}"]).strip()
+        except subprocess.CalledProcessError:
             # Fallback for local testing or if remote ref doesn't exist
-            commit = run_command(f"git rev-parse {branch}").strip()
+            commit = run_command(["git", "rev-parse", branch]).strip()
 
         if commit in substitutions:
             commit = substitutions[commit]
@@ -122,7 +122,7 @@ def main():
         
         first_version = None
         for dir_path in directories:
-            dockerfile = run_command(f"git show {commit}:{dir_path}/Dockerfile")
+            dockerfile = run_command(["git", "show", f"{commit}:{dir_path}/Dockerfile"])
             
             # Extract FROM
             from_match = re.search(r"^\s*FROM\s+(\S+)", dockerfile, re.MULTILINE | re.IGNORECASE)
