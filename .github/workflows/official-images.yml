@@ -69,28 +69,15 @@ jobs:
             sed -E "s/GitCommit: .*/GitCommit: 0000000000000000000000000000000000000000/" > existing-library-gradle
           sed -E "1d; s/GitCommit: .*/GitCommit: 0000000000000000000000000000000000000000/" library-gradle > updated-library-gradle
           DIFF_OUTPUT=$(diff existing-library-gradle updated-library-gradle || :)
-          echo "$DIFF_OUTPUT"
-          echo "diff<<EOF" >> $GITHUB_OUTPUT
-          echo "$DIFF_OUTPUT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-      - name: Comment PR with diff
-        if: github.event_name == 'pull_request' && steps.compare.outputs.diff != ''
-        uses: actions/github-script@v7
+          echo "$DIFF_OUTPUT" > diff.txt
+      - name: Save PR number
+        if: github.event_name == 'pull_request'
+        run: echo ${{ github.event.number }} > pr_number.txt
+      - name: Upload diff and PR number
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
         with:
-          script: |
-            const diff = `${{ steps.compare.outputs.diff }}`;
-            const body = `<details>
-            <summary>Library file diff (ignoring commit IDs)</summary>
-
-            \`\`\`diff
-            ${diff}
-            \`\`\`
-
-            </details>`;
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: body
-            });
+          name: pr-comment-data
+          path: |
+            diff.txt
+            pr_number.txt
