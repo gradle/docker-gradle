@@ -15,6 +15,11 @@ def get_gradle_version(base_version):
     ]
     # Version sort
     filtered_versions.sort(key=lambda s: [int(u) for u in s.split('.')])
+    if not filtered_versions:
+        raise RuntimeError(
+            f"No stable Gradle versions found for base version '{base_version}' "
+            f"from https://services.gradle.org/versions/{base_version}"
+        )
     return filtered_versions[-1]
 
 def get_sha256(url):
@@ -40,6 +45,7 @@ def get_graalvm_info(jdk_version):
 
 def update_file(filepath, pattern, replacement):
     if not os.path.exists(filepath):
+        print(f"Warning: target file '{filepath}' does not exist. Skipping update.", file=sys.stderr)
         return
     with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
