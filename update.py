@@ -2,7 +2,6 @@
 import requests
 import re
 import os
-import hashlib
 import sys
 
 def get_gradle_version(base_version):
@@ -38,13 +37,6 @@ def get_graalvm_info(jdk_version):
     
     return version
 
-def get_remote_sha256(url):
-    response = requests.get(url, stream=True, timeout=10)
-    response.raise_for_status()
-    sha256_hash = hashlib.sha256()
-    for chunk in response.iter_content(chunk_size=4096):
-        sha256_hash.update(chunk)
-    return sha256_hash.hexdigest()
 
 def update_file(filepath, pattern, replacement):
     if not os.path.exists(filepath):
@@ -91,8 +83,8 @@ def main():
 
     # GraalVM updates
     graal17_version = get_graalvm_info("17")
-    graal17_amd64_sha = get_remote_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal17_version}/graalvm-community-jdk-{graal17_version}_linux-x64_bin.tar.gz")
-    graal17_aarch64_sha = get_remote_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal17_version}/graalvm-community-jdk-{graal17_version}_linux-aarch64_bin.tar.gz")
+    graal17_amd64_sha = get_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal17_version}/graalvm-community-jdk-{graal17_version}_linux-x64_bin.tar.gz.sha256")
+    graal17_aarch64_sha = get_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal17_version}/graalvm-community-jdk-{graal17_version}_linux-aarch64_bin.tar.gz.sha256")
 
     for dir_name in ["jdk17-noble-graal", "jdk17-jammy-graal"]:
         filepath = os.path.join(dir_name, "Dockerfile")
@@ -109,8 +101,8 @@ def main():
         return
 
     graal21_version = get_graalvm_info("21")
-    graal21_amd64_sha = get_remote_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal21_version}/graalvm-community-jdk-{graal21_version}_linux-x64_bin.tar.gz")
-    graal21_aarch64_sha = get_remote_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal21_version}/graalvm-community-jdk-{graal21_version}_linux-aarch64_bin.tar.gz")
+    graal21_amd64_sha = get_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal21_version}/graalvm-community-jdk-{graal21_version}_linux-x64_bin.tar.gz.sha256")
+    graal21_aarch64_sha = get_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal21_version}/graalvm-community-jdk-{graal21_version}_linux-aarch64_bin.tar.gz.sha256")
 
     for dir_name in ["jdk21-noble-graal", "jdk21-jammy-graal"]:
         filepath = os.path.join(dir_name, "Dockerfile")
@@ -125,8 +117,8 @@ def main():
 
     if base_version < 9:
         graal24_version = get_graalvm_info("24")
-        graal24_amd64_sha = get_remote_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal24_version}/graalvm-community-jdk-{graal24_version}_linux-x64_bin.tar.gz")
-        graal24_aarch64_sha = get_remote_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal24_version}/graalvm-community-jdk-{graal24_version}_linux-aarch64_bin.tar.gz")
+        graal24_amd64_sha = get_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal24_version}/graalvm-community-jdk-{graal24_version}_linux-x64_bin.tar.gz.sha256")
+        graal24_aarch64_sha = get_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal24_version}/graalvm-community-jdk-{graal24_version}_linux-aarch64_bin.tar.gz.sha256")
 
         for dir_name in ["jdk24-noble-graal"]:
             filepath = os.path.join(dir_name, "Dockerfile")
@@ -148,8 +140,8 @@ def main():
         print()
     else:
         graal25_version = get_graalvm_info("25")
-        graal25_amd64_sha = get_remote_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal25_version}/graalvm-community-jdk-{graal25_version}_linux-x64_bin.tar.gz")
-        graal25_aarch64_sha = get_remote_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal25_version}/graalvm-community-jdk-{graal25_version}_linux-aarch64_bin.tar.gz")
+        graal25_amd64_sha = get_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal25_version}/graalvm-community-jdk-{graal25_version}_linux-x64_bin.tar.gz.sha256")
+        graal25_aarch64_sha = get_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal25_version}/graalvm-community-jdk-{graal25_version}_linux-aarch64_bin.tar.gz.sha256")
 
         for dir_name in ["jdk25-noble-graal"]:
             filepath = os.path.join(dir_name, "Dockerfile")
