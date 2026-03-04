@@ -3,6 +3,7 @@ import requests
 import re
 import os
 import sys
+import hashlib
 
 def get_gradle_version(base_version):
     response = requests.get(f"https://services.gradle.org/versions/{base_version}", timeout=10)
@@ -22,10 +23,25 @@ def get_gradle_version(base_version):
         )
     return filtered_versions[-1]
 
+def calculate_sha256(url):
+    sha256_hash = hashlib.sha256()
+    with requests.get(url, stream=True, timeout=300) as r:
+        r.raise_for_status()
+        for chunk in r.iter_content(chunk_size=8192):
+            sha256_hash.update(chunk)
+    return sha256_hash.hexdigest()
+
 def get_sha256(url):
-    response = requests.get(url, timeout=10)
-    response.raise_for_status()
-    return response.text.strip()
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        return response.text.strip()
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 404 and url.endswith(".sha256"):
+            binary_url = url[:-7]
+            print(f"SHA256 file not found at {url}. Calculating from {binary_url}...", file=sys.stderr)
+            return calculate_sha256(binary_url)
+        raise
 
 def get_graalvm_info(jdk_version):
     response = requests.get("https://api.github.com/repos/graalvm/graalvm-ce-builds/releases?per_page=20&page=1", timeout=10)

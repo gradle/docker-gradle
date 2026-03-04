@@ -25,28 +25,28 @@ def get_directories(commit):
     output = run_command(["git", "ls-tree", "-r", "--name-only", commit])
     files = output.splitlines()
     dirs = [os.path.dirname(f) for f in files if f.endswith("/Dockerfile") and not f.startswith("toolbox/") and not f.startswith(".")]
-    
+
     def sort_key(d):
         jdk_part = d.split('-')[0].replace("jdk", "")
         if jdk_part == "":
             jdk_val = 999 # jdk-lts-and-current
         else:
             jdk_val = int(jdk_part)
-        
+
         lts_jdks = [25, 21, 17, 11, 8]
         is_lts = 0 if jdk_val in lts_jdks else 1
-        
+
         jdk_sort_val = jdk_val if jdk_val == 999 else -jdk_val
-        
+
         variant_score = 0
         if "alpine" in d: variant_score = 1
         elif "corretto" in d: variant_score = 2
         elif "ubi" in d: variant_score = 3
         elif "graal" in d: variant_score = 4
-        
+
         ubuntu_score = -2
         if "jammy" in d: ubuntu_score = -1
-        
+
         return (is_lts, jdk_sort_val, variant_score, ubuntu_score, d)
 
     dirs.sort(key=sort_key)
@@ -55,9 +55,9 @@ def get_directories(commit):
 def get_arches(image, cache):
     if image in cache:
         return cache[image]
-    
+
     # In the original script: bashbrew cat --format '{{ join ", " .TagEntry.Architectures }}' "https://github.com/docker-library/official-images/raw/HEAD/library/$from"
-    # Note: bashbrew might not be available in the environment where this runs during development, 
+    # Note: bashbrew might not be available in the environment where this runs during development,
     # but it should be in the toolbox image.
     try:
         output = run_command(["bashbrew", "cat", "--format", '{{ join ", " .TagEntry.Architectures }}', f"https://github.com/docker-library/official-images/raw/HEAD/library/{image}"])
@@ -72,7 +72,7 @@ def intersect_arches(arches1, arches2):
     a = set(arch.strip() for arch in arches1.split(",") if arch.strip())
     b = set(arch.strip() for arch in arches2.split(",") if arch.strip())
     common = a.intersection(b)
-    # Maintain some sort of order if possible, though sets are unordered. 
+    # Maintain some sort of order if possible, though sets are unordered.
     # Let's sort them to be deterministic.
     return ", ".join(sorted(list(common)))
 
@@ -105,7 +105,7 @@ def main():
 
     for branch in branches:
         major = '9' if branch == 'master' else branch
-        
+
         try:
             commit = run_command(["git", "rev-parse", f"refs/remotes/{git_remote}/{branch}"]).strip()
         except subprocess.CalledProcessError:
@@ -115,30 +115,30 @@ def main():
         if commit in substitutions:
             commit = substitutions[commit]
             print(f"note: substituting commit {commit} for branch {branch}", file=sys.stderr)
-        
+
         print(f"\n# Gradle {major}.x")
-        
+
         directories = get_directories(commit)
-        
+
         first_version = None
         for dir_path in directories:
             dockerfile = run_command(["git", "show", f"{commit}:{dir_path}/Dockerfile"])
-            
+
             # Extract FROM
             from_match = re.search(r"^\s*FROM\s+(\S+)", dockerfile, re.MULTILINE | re.IGNORECASE)
             from_image = from_match.group(1) if from_match else ""
-            
+
             # Extract GRADLE_VERSION
             version_match = re.search(r"^\s*ENV\s+GRADLE_VERSION=(\S+)", dockerfile, re.MULTILINE)
             version = version_match.group(1) if version_match else ""
-            
+
             if re.match(r"^[0-9]+\.[0-9]+$", version):
                 version += ".0"
-            
+
             if not version.startswith(f"{major}."):
                 print(f"error: version mismatch in {dir_path} on {branch} (version {version} is not {major}.x)", file=sys.stderr)
                 sys.exit(1)
-            
+
             if first_version is None:
                 first_version = version
             elif version != first_version:
@@ -149,17 +149,17 @@ def main():
             suite = from_tag.replace("-jdk", "").replace("-minimal", "")
             if "-" in suite:
                 suite = suite.split("-")[-1]
-            
+
             jdk = dir_path.split("-")[0]
             if dir_path.startswith("jdk-lts-and-current"):
                 jdk = 'jdk-lts-and-current'
-            
+
             variant = ''
             if "-alpine" in dir_path: variant = 'alpine'
             elif "-corretto" in dir_path: variant = 'corretto'
             elif "-ubi" in dir_path: variant = 'ubi'
             elif "-graal" in dir_path: variant = 'graal'
-            
+
             tags = []
             v_parts = version.split(".")
             versions = [
@@ -168,11 +168,11 @@ def main():
                 v_parts[0],
                 ''
             ]
-            
+
             suffix = f"-{jdk}" + (f"-{variant}" if variant else "")
             for v in versions:
                 tags.append(f"{v}{suffix}".lstrip("-"))
-            
+
             if variant == '':
                 for v in versions:
                     tags.append(f"{v}-{jdk}-{suite}".lstrip("-"))
@@ -220,7 +220,7 @@ def main():
                     current_match = re.search(r"JAVA_CURRENT_VERSION=(\S+)", dockerfile)
                     if lts_match: lts = lts_match.group(1).split(".")[0]
                     if current_match: current = current_match.group(1).split(".")[0]
-                    
+
                     # Fallback to HOME if VERSION not found (unlikely but safer)
                     if not lts:
                         lts_match = re.search(r"^\s*ENV\s+JAVA_LTS_HOME=.*?(\d+)\s*$", dockerfile, re.MULTILINE)
@@ -236,7 +236,7 @@ def main():
                         current = current_from.split(":")[-1].split("-")[0]
                     else:
                         current = lts
-                
+
                 new_versioned_tags = []
                 for t in tags:
                     new_versioned_tags.append(t.replace('jdk-lts-and-current', f'jdk-{lts}-and-{current}'))
@@ -251,7 +251,7 @@ def main():
                     continue
                 used_tags[tag] = True
                 actual_tags.append(tag)
-            
+
             if not actual_tags:
                 continue
 
@@ -259,14 +259,14 @@ def main():
                 arches = 'amd64, arm64v8'
             else:
                 arches = get_arches(from_image, arches_lookup_cache)
-            
+
             if jdk == 'jdk-lts-and-current' and variant != 'graal':
                 copy_from_match = re.search(r"^\s*COPY\s+--from=(\S+)", dockerfile, re.MULTILINE | re.IGNORECASE)
                 copy_from = copy_from_match.group(1) if copy_from_match else from_image
                 copy_from_arches = get_arches(copy_from, arches_lookup_cache)
-                
+
                 if arches != copy_from_arches:
-                    new_arches = intersect_arches(arches, copy_from_arches)
+                        new_arches = intersect_arches(arches, copy_from_arches)
                     if not new_arches:
                         print(f"error: arches mismatch between {from_image} and {copy_from} in {dir_path} on branch {branch} ('{arches}' vs '{copy_from_arches}' results in an empty intersection)", file=sys.stderr)
                         sys.exit(1)
