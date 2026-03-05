@@ -16,9 +16,30 @@ def run_command(command, input_str=None):
 
 def get_git_remote():
     output = run_command(["git", "remote", "-v"])
+    remotes = []
     for line in output.splitlines():
-        if "gradle/docker-gradle" in line:
-            return line.split()[0]
+        parts = line.split()
+        if len(parts) < 2:
+            continue
+        name, url = parts[0], parts[1]
+        remotes.append((name, url))
+
+    # Prefer remotes whose URL matches the original, specific pattern.
+    for name, url in remotes:
+        if "gradle/docker-gradle" in url:
+            return name
+
+    # Fallback: remotes whose URL matches a broader pattern (e.g., forks).
+   for name, url in remotes:
+        if "docker-gradle" in url:
+            return name
+
+    # Next preference: a remote explicitly named "upstream", if present.
+    for name, _ in remotes:
+        if name == "upstream":
+            return name
+
+    # Final fallback: assume "origin" is the appropriate remote.
     return "origin"
 
 def get_directories(commit):
