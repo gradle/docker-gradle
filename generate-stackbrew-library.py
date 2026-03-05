@@ -80,14 +80,16 @@ def get_arches(image, cache):
     # In the original script: bashbrew cat --format '{{ join ", " .TagEntry.Architectures }}' "https://github.com/docker-library/official-images/raw/HEAD/library/$from"
     # Note: bashbrew might not be available in the environment where this runs during development,
     # but it should be in the toolbox image.
-    try:
-        output = run_command(["bashbrew", "cat", "--format", '{{ join ", " .TagEntry.Architectures }}', f"https://github.com/docker-library/official-images/raw/HEAD/library/{image}"])
-        arches = output.strip()
-        cache[image] = arches
-        return arches
-    except Exception as e:
-        print(f"Warning: could not get arches for {image}: {e}", file=sys.stderr)
-        return ""
+    output = run_command([
+        "bashbrew",
+        "cat",
+        "--format",
+        '{{ join ", " .TagEntry.Architectures }}',
+        f"https://github.com/docker-library/official-images/raw/HEAD/library/{image}",
+    ])
+    arches = output.strip()
+    cache[image] = arches
+    return arches
 
 def intersect_arches(arches1, arches2):
     a = set(arch.strip() for arch in arches1.split(",") if arch.strip())
