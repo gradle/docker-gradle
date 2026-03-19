@@ -108,7 +108,7 @@ def main():
     if args.substitute:
         for src, repl in args.substitute:
             substitutions[src] = repl
-            print("WARNING: using substitution, the result can't be submitted to the official images repository", file=sys.stderr)
+            print("WARNING: using substitution, the result can't be submitted to the official images repository") # to stdout so it shows up in the generated output
 
     branches = ['master', '8', '7', '6']
     retired_tags = {
