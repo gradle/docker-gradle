@@ -10,4 +10,4 @@ exec docker run --rm -ti \
 	-v "$(pwd):/workspace" \
 	-w /workspace \
 	gradle-dockerhub-toolbox \
-	bash "$@"
+	python3 "$@"
