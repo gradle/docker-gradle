@@ -30,7 +30,7 @@ def get_git_remote():
             return name
 
     # Fallback: remotes whose URL matches a broader pattern (e.g., forks).
-   for name, url in remotes:
+    for name, url in remotes:
         if "docker-gradle" in url:
             return name
 
