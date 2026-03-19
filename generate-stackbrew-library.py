@@ -289,7 +289,7 @@ def main():
                 copy_from_arches = get_arches(copy_from, arches_lookup_cache)
 
                 if arches != copy_from_arches:
-                        new_arches = intersect_arches(arches, copy_from_arches)
+                    new_arches = intersect_arches(arches, copy_from_arches)
                     if not new_arches:
                         print(f"error: arches mismatch between {from_image} and {copy_from} in {dir_path} on branch {branch} ('{arches}' vs '{copy_from_arches}' results in an empty intersection)", file=sys.stderr)
                         sys.exit(1)
