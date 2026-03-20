@@ -47,17 +47,16 @@ def get_graalvm_info(jdk_version):
     response = requests.get("https://api.github.com/repos/graalvm/graalvm-ce-builds/releases?per_page=20&page=1", timeout=10)
     response.raise_for_status()
     releases = response.json()
-    
+
     tag_prefix = f"jdk-{jdk_version}"
     matching_releases = [r for r in releases if tag_prefix in r['tag_name']]
     if not matching_releases:
         raise Exception(f"No GraalVM release found for JDK {jdk_version}")
-    
+
     tag_name = matching_releases[0]['tag_name']
     version = tag_name.replace("jdk-", "")
-    
-    return version
 
+    return version
 
 def update_file(filepath, pattern, replacement):
     if not os.path.exists(filepath):
@@ -65,12 +64,36 @@ def update_file(filepath, pattern, replacement):
         return
     with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
-    
+
     new_content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
-    
+
     if content != new_content:
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(new_content)
+
+def fetch_graalvm_release_info(jdk_version):
+    version = get_graalvm_info(jdk_version)
+    amd64_sha = get_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{version}/graalvm-community-jdk-{version}_linux-x64_bin.tar.gz.sha256")
+    aarch64_sha = get_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{version}/graalvm-community-jdk-{version}_linux-aarch64_bin.tar.gz.sha256")
+
+    print(f"Latest Graal {jdk_version} version is {version}")
+    print(f"Graal {jdk_version} AMD64 hash is {amd64_sha}")
+    print(f"Graal {jdk_version} AARCH64 hash is {aarch64_sha}")
+    print()
+
+    return version, amd64_sha, aarch64_sha
+
+def update_graalvm_dockerfiles(dir_names, version, amd64_sha, aarch64_sha, env_prefix=""):
+    for dir_name in dir_names:
+        filepath = os.path.join(dir_name, "Dockerfile")
+        if env_prefix:
+            update_file(filepath, rf"JAVA_{env_prefix}_VERSION=\S+", f"JAVA_{env_prefix}_VERSION={version}")
+            update_file(filepath, rf"GRAALVM_{env_prefix}_AMD64_DOWNLOAD_SHA256=\S+", f"GRAALVM_{env_prefix}_AMD64_DOWNLOAD_SHA256={amd64_sha}")
+            update_file(filepath, rf"GRAALVM_{env_prefix}_AARCH64_DOWNLOAD_SHA256=\S+", f"GRAALVM_{env_prefix}_AARCH64_DOWNLOAD_SHA256={aarch64_sha}")
+        else:
+            update_file(filepath, r"ENV JAVA_VERSION=\S+", f"ENV JAVA_VERSION={version}")
+            update_file(filepath, r"GRAALVM_AMD64_DOWNLOAD_SHA256=\S+", f"GRAALVM_AMD64_DOWNLOAD_SHA256={amd64_sha}")
+            update_file(filepath, r"GRAALVM_AARCH64_DOWNLOAD_SHA256=\S+", f"GRAALVM_AARCH64_DOWNLOAD_SHA256={aarch64_sha}")
 
 def main():
     version_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'version.txt')
@@ -80,15 +103,15 @@ def main():
     else:
         print(f"Error: {version_file} not found. Please ensure the script is run from the correct directory or the file exists.", file=sys.stderr)
         sys.exit(1)
-    
+
     base_version = int(base_version_str)
     gradle_version = get_gradle_version(base_version_str)
-    
+
     print(f"Base version: {base_version_str}")
     print(f"Latest version: {gradle_version}")
-    
+
     gradle_sha = get_sha256(f"https://downloads.gradle.org/distributions/gradle-{gradle_version}-bin.zip.sha256")
-    
+
     # Update all Dockerfiles
     for root, dirs, files in os.walk('.'):
         for file in files:
@@ -104,85 +127,26 @@ def main():
         return
 
     # GraalVM updates
-    graal17_version = get_graalvm_info("17")
-    graal17_amd64_sha = get_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal17_version}/graalvm-community-jdk-{graal17_version}_linux-x64_bin.tar.gz.sha256")
-    graal17_aarch64_sha = get_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal17_version}/graalvm-community-jdk-{graal17_version}_linux-aarch64_bin.tar.gz.sha256")
-
-    for dir_name in ["jdk17-noble-graal", "jdk17-jammy-graal"]:
-        filepath = os.path.join(dir_name, "Dockerfile")
-        update_file(filepath, r"ENV JAVA_VERSION=\S+", f"ENV JAVA_VERSION={graal17_version}")
-        update_file(filepath, r"GRAALVM_AMD64_DOWNLOAD_SHA256=\S+", f"GRAALVM_AMD64_DOWNLOAD_SHA256={graal17_amd64_sha}")
-        update_file(filepath, r"GRAALVM_AARCH64_DOWNLOAD_SHA256=\S+", f"GRAALVM_AARCH64_DOWNLOAD_SHA256={graal17_aarch64_sha}")
-
-    print(f"Latest Graal 17 version is {graal17_version}")
-    print(f"Graal 17 AMD64 hash is {graal17_amd64_sha}")
-    print(f"Graal 17 AARCH64 hash is {graal17_aarch64_sha}")
-    print()
+    graal17_version, graal17_amd64_sha, graal17_aarch64_sha = fetch_graalvm_release_info("17")
+    update_graalvm_dockerfiles(["jdk17-noble-graal", "jdk17-jammy-graal"], graal17_version, graal17_amd64_sha, graal17_aarch64_sha)
 
     if base_version < 8:
         return
 
-    graal21_version = get_graalvm_info("21")
-    graal21_amd64_sha = get_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal21_version}/graalvm-community-jdk-{graal21_version}_linux-x64_bin.tar.gz.sha256")
-    graal21_aarch64_sha = get_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal21_version}/graalvm-community-jdk-{graal21_version}_linux-aarch64_bin.tar.gz.sha256")
-
-    for dir_name in ["jdk21-noble-graal", "jdk21-jammy-graal"]:
-        filepath = os.path.join(dir_name, "Dockerfile")
-        update_file(filepath, r"ENV JAVA_VERSION=\S+", f"ENV JAVA_VERSION={graal21_version}")
-        update_file(filepath, r"GRAALVM_AMD64_DOWNLOAD_SHA256=\S+", f"GRAALVM_AMD64_DOWNLOAD_SHA256={graal21_amd64_sha}")
-        update_file(filepath, r"GRAALVM_AARCH64_DOWNLOAD_SHA256=\S+", f"GRAALVM_AARCH64_DOWNLOAD_SHA256={graal21_aarch64_sha}")
-
-    print(f"Latest Graal 21 version is {graal21_version}")
-    print(f"Graal 21 AMD64 hash is {graal21_amd64_sha}")
-    print(f"Graal 21 AARCH64 hash is {graal21_aarch64_sha}")
-    print()
+    graal21_version, graal21_amd64_sha, graal21_aarch64_sha = fetch_graalvm_release_info("21")
+    update_graalvm_dockerfiles(["jdk21-noble-graal", "jdk21-jammy-graal"], graal21_version, graal21_amd64_sha, graal21_aarch64_sha)
 
     if base_version < 9:
-        graal24_version = get_graalvm_info("24")
-        graal24_amd64_sha = get_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal24_version}/graalvm-community-jdk-{graal24_version}_linux-x64_bin.tar.gz.sha256")
-        graal24_aarch64_sha = get_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal24_version}/graalvm-community-jdk-{graal24_version}_linux-aarch64_bin.tar.gz.sha256")
+        graal24_version, graal24_amd64_sha, graal24_aarch64_sha = fetch_graalvm_release_info("24")
+        update_graalvm_dockerfiles(["jdk24-noble-graal"], graal24_version, graal24_amd64_sha, graal24_aarch64_sha)
 
-        for dir_name in ["jdk24-noble-graal"]:
-            filepath = os.path.join(dir_name, "Dockerfile")
-            update_file(filepath, r"ENV JAVA_VERSION=\S+", f"ENV JAVA_VERSION={graal24_version}")
-            update_file(filepath, r"GRAALVM_AMD64_DOWNLOAD_SHA256=\S+", f"GRAALVM_AMD64_DOWNLOAD_SHA256={graal24_amd64_sha}")
-            update_file(filepath, r"GRAALVM_AARCH64_DOWNLOAD_SHA256=\S+", f"GRAALVM_AARCH64_DOWNLOAD_SHA256={graal24_aarch64_sha}")
-
-        filepath = os.path.join("jdk-lts-and-current-graal", "Dockerfile")
-        update_file(filepath, r"JAVA_21_VERSION=\S+", f"JAVA_21_VERSION={graal21_version}")
-        update_file(filepath, r"GRAALVM_21_AMD64_DOWNLOAD_SHA256=\S+", f"GRAALVM_21_AMD64_DOWNLOAD_SHA256={graal21_amd64_sha}")
-        update_file(filepath, r"GRAALVM_21_AARCH64_DOWNLOAD_SHA256=\S+", f"GRAALVM_21_AARCH64_DOWNLOAD_SHA256={graal21_aarch64_sha}")
-        update_file(filepath, r"JAVA_24_VERSION=\S+", f"JAVA_24_VERSION={graal24_version}")
-        update_file(filepath, r"GRAALVM_24_AMD64_DOWNLOAD_SHA256=\S+", f"GRAALVM_24_AMD64_DOWNLOAD_SHA256={graal24_amd64_sha}")
-        update_file(filepath, r"GRAALVM_24_AARCH64_DOWNLOAD_SHA256=\S+", f"GRAALVM_24_AARCH64_DOWNLOAD_SHA256={graal24_aarch64_sha}")
-
-        print(f"Latest Graal 24 version is {graal24_version}")
-        print(f"Graal 24 AMD64 hash is {graal24_amd64_sha}")
-        print(f"Graal 24 AARCH64 hash is {graal24_aarch64_sha}")
-        print()
+        update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], graal21_version, graal21_amd64_sha, graal21_aarch64_sha, env_prefix="21")
+        update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], graal24_version, graal24_amd64_sha, graal24_aarch64_sha, env_prefix="24")
     else:
-        graal25_version = get_graalvm_info("25")
-        graal25_amd64_sha = get_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal25_version}/graalvm-community-jdk-{graal25_version}_linux-x64_bin.tar.gz.sha256")
-        graal25_aarch64_sha = get_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{graal25_version}/graalvm-community-jdk-{graal25_version}_linux-aarch64_bin.tar.gz.sha256")
+        graal25_version, graal25_amd64_sha, graal25_aarch64_sha = fetch_graalvm_release_info("25")
+        update_graalvm_dockerfiles(["jdk25-noble-graal"], graal25_version, graal25_amd64_sha, graal25_aarch64_sha)
 
-        for dir_name in ["jdk25-noble-graal"]:
-            filepath = os.path.join(dir_name, "Dockerfile")
-            update_file(filepath, r"ENV JAVA_VERSION=\S+", f"ENV JAVA_VERSION={graal25_version}")
-            update_file(filepath, r"GRAALVM_AMD64_DOWNLOAD_SHA256=\S+", f"GRAALVM_AMD64_DOWNLOAD_SHA256={graal25_amd64_sha}")
-            update_file(filepath, r"GRAALVM_AARCH64_DOWNLOAD_SHA256=\S+", f"GRAALVM_AARCH64_DOWNLOAD_SHA256={graal25_aarch64_sha}")
-
-        filepath = os.path.join("jdk-lts-and-current-graal", "Dockerfile")
-        update_file(filepath, r"JAVA_LTS_VERSION=\S+", f"JAVA_LTS_VERSION={graal25_version}")
-        update_file(filepath, r"GRAALVM_LTS_AMD64_DOWNLOAD_SHA256=\S+", f"GRAALVM_LTS_AMD64_DOWNLOAD_SHA256={graal25_amd64_sha}")
-        update_file(filepath, r"GRAALVM_LTS_AARCH64_DOWNLOAD_SHA256=\S+", f"GRAALVM_LTS_AARCH64_DOWNLOAD_SHA256={graal25_aarch64_sha}")
-        update_file(filepath, r"JAVA_CURRENT_VERSION=\S+", f"JAVA_CURRENT_VERSION={graal25_version}")
-        update_file(filepath, r"GRAALVM_CURRENT_AMD64_DOWNLOAD_SHA256=\S+", f"GRAALVM_CURRENT_AMD64_DOWNLOAD_SHA256={graal25_amd64_sha}")
-        update_file(filepath, r"GRAALVM_CURRENT_AARCH64_DOWNLOAD_SHA256=\S+", f"GRAALVM_CURRENT_AARCH64_DOWNLOAD_SHA256={graal25_aarch64_sha}")
-
-        print(f"Latest Graal 25 version is {graal25_version}")
-        print(f"Graal 25 AMD64 hash is {graal25_amd64_sha}")
-        print(f"Graal 25 AARCH64 hash is {graal25_aarch64_sha}")
-        print()
-
+        update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], graal25_version, graal25_amd64_sha, graal25_aarch64_sha, env_prefix="LTS")
+        update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], graal25_version, graal25_amd64_sha, graal25_aarch64_sha, env_prefix="CURRENT")
 if __name__ == "__main__":
     main()
