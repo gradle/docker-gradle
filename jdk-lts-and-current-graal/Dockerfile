@@ -82,7 +82,7 @@ RUN set -o errexit -o nounset \
 
 ENV JAVA_HOME=/opt/java/graalvm
 ENV JAVA_LTS_HOME=/opt/java/graalvm25
-ENV JAVA_CURRENT_HOME=/opt/java/graalvm25
+ENV JAVA_CURRENT_HOME=/opt/java/graalvm26
 RUN set -o errexit -o nounset \
     && mkdir /opt/java \
     \
@@ -107,9 +107,9 @@ RUN set -o errexit -o nounset \
     && mv graalvm-* "${JAVA_LTS_HOME}" \
     \
     && echo "Downloading current GraalVM" \
-    && JAVA_CURRENT_VERSION=25.0.2 \
-    && GRAALVM_CURRENT_AMD64_DOWNLOAD_SHA256=e0be791c8fda4d03b6b0a0cb824fef3149736170057b3a515252b44419606af0 \
-    && GRAALVM_CURRENT_AARCH64_DOWNLOAD_SHA256=b4580d9f223d0a4b3a1757e58b18ff4c1db950e67e105fc5cb741457d2384a71 \
+    && JAVA_CURRENT_VERSION=26.0.0 \
+    && GRAALVM_CURRENT_AMD64_DOWNLOAD_SHA256=x \
+    && GRAALVM_CURRENT_AARCH64_DOWNLOAD_SHA256=x \
     && if [ "${JAVA_LTS_VERSION}" != "${JAVA_CURRENT_VERSION}" ]; then \
       ARCHITECTURE=$(dpkg --print-architecture) \
       && if [ "${ARCHITECTURE}" = "amd64" ]; then GRAALVM_ARCHITECTURE=linux-x64; fi \

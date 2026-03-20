@@ -146,7 +146,11 @@ def main():
         graal25_version, graal25_amd64_sha, graal25_aarch64_sha = fetch_graalvm_release_info("25")
         update_graalvm_dockerfiles(["jdk25-noble-graal"], graal25_version, graal25_amd64_sha, graal25_aarch64_sha)
 
+        graal26_version, graal26_amd64_sha, graal26_aarch64_sha = fetch_graalvm_release_info("26")
+        update_graalvm_dockerfiles(["jdk26-noble-graal"], graal26_version, graal26_amd64_sha, graal26_aarch64_sha)
+
         update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], graal25_version, graal25_amd64_sha, graal25_aarch64_sha, env_prefix="LTS")
-        update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], graal25_version, graal25_amd64_sha, graal25_aarch64_sha, env_prefix="CURRENT")
+        update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], graal26_version, graal26_amd64_sha, graal26_aarch64_sha, env_prefix="CURRENT")
+
 if __name__ == "__main__":
     main()
