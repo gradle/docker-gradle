@@ -47,17 +47,16 @@ def get_graalvm_info(jdk_version):
     response = requests.get("https://api.github.com/repos/graalvm/graalvm-ce-builds/releases?per_page=20&page=1", timeout=10)
     response.raise_for_status()
     releases = response.json()
-    
+
     tag_prefix = f"jdk-{jdk_version}"
     matching_releases = [r for r in releases if tag_prefix in r['tag_name']]
     if not matching_releases:
         raise Exception(f"No GraalVM release found for JDK {jdk_version}")
-    
+
     tag_name = matching_releases[0]['tag_name']
     version = tag_name.replace("jdk-", "")
-    
-    return version
 
+    return version
 
 def update_file(filepath, pattern, replacement):
     if not os.path.exists(filepath):
@@ -65,9 +64,9 @@ def update_file(filepath, pattern, replacement):
         return
     with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
-    
+
     new_content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
-    
+
     if content != new_content:
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(new_content)
@@ -80,15 +79,15 @@ def main():
     else:
         print(f"Error: {version_file} not found. Please ensure the script is run from the correct directory or the file exists.", file=sys.stderr)
         sys.exit(1)
-    
+
     base_version = int(base_version_str)
     gradle_version = get_gradle_version(base_version_str)
-    
+
     print(f"Base version: {base_version_str}")
     print(f"Latest version: {gradle_version}")
-    
+
     gradle_sha = get_sha256(f"https://downloads.gradle.org/distributions/gradle-{gradle_version}-bin.zip.sha256")
-    
+
     # Update all Dockerfiles
     for root, dirs, files in os.walk('.'):
         for file in files:
