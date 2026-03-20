@@ -1,9 +1,8 @@
 FROM amazoncorretto:25-al2023-jdk
 
-# We need this again when Java 26 comes out
-#COPY --from=amazoncorretto:26-al2023-jdk /usr/lib/jvm/java-26-amazon-corretto /usr/lib/jvm/java-26-amazon-corretto
+COPY --from=amazoncorretto:26-al2023-jdk /usr/lib/jvm/java-26-amazon-corretto /usr/lib/jvm/java-26-amazon-corretto
 ENV JAVA_LTS_HOME=/usr/lib/jvm/java-25-amazon-corretto
-ENV JAVA_CURRENT_HOME=/usr/lib/jvm/java-25-amazon-corretto
+ENV JAVA_CURRENT_HOME=/usr/lib/jvm/java-26-amazon-corretto
 
 CMD ["gradle"]
 
