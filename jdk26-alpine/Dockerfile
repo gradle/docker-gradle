@@ -1,10 +1,4 @@
-FROM eclipse-temurin:25-jdk-alpine
-
-COPY --from=eclipse-temurin:26-jdk-alpine /opt/java/openjdk /opt/java/openjdk26
-RUN set -o errexit -o nounset \
-    && ln -s /opt/java/openjdk /opt/java/openjdk25
-ENV JAVA_LTS_HOME=/opt/java/openjdk25
-ENV JAVA_CURRENT_HOME=/opt/java/openjdk26
+FROM eclipse-temurin:26-jdk-alpine
 
 CMD ["gradle"]
 
@@ -16,14 +10,10 @@ RUN set -o errexit -o nounset \
     && adduser --system --ingroup gradle --uid 1000 --shell /bin/ash gradle \
     && mkdir /home/gradle/.gradle \
     && chown -R gradle:gradle /home/gradle \
+    && chmod -R o+rwx /home/gradle \
     \
     && echo "Symlinking root Gradle cache to gradle Gradle cache" \
-    && ln -s /home/gradle/.gradle /root/.gradle \
-   \
-   && echo "Ensuring Gradle detects installed JDKs" \
-   && echo "org.gradle.java.installations.auto-detect=false" > /home/gradle/.gradle/gradle.properties \
-   && echo "org.gradle.java.installations.auto-download=false" >> /home/gradle/.gradle/gradle.properties \
-   && echo "org.gradle.java.installations.fromEnv=JAVA_LTS_HOME,JAVA_CURRENT_HOME" >> /home/gradle/.gradle/gradle.properties
+    && ln -s /home/gradle/.gradle /root/.gradle
 
 VOLUME /home/gradle/.gradle
 
