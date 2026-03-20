@@ -148,5 +148,6 @@ def main():
 
         update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], graal25_version, graal25_amd64_sha, graal25_aarch64_sha, env_prefix="LTS")
         update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], graal25_version, graal25_amd64_sha, graal25_aarch64_sha, env_prefix="CURRENT")
+
 if __name__ == "__main__":
     main()
