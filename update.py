@@ -71,7 +71,7 @@ def update_file(filepath, pattern, replacement):
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(new_content)
 
-def fetch_graalvm_version(jdk_version):
+def fetch_graalvm_release_info(jdk_version):
     version = get_graalvm_info(jdk_version)
     amd64_sha = get_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{version}/graalvm-community-jdk-{version}_linux-x64_bin.tar.gz.sha256")
     aarch64_sha = get_sha256(f"https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{version}/graalvm-community-jdk-{version}_linux-aarch64_bin.tar.gz.sha256")
@@ -127,23 +127,23 @@ def main():
         return
 
     # GraalVM updates
-    graal17_version, graal17_amd64_sha, graal17_aarch64_sha = fetch_graalvm_version("17")
+    graal17_version, graal17_amd64_sha, graal17_aarch64_sha = fetch_graalvm_release_info("17")
     update_graalvm_dockerfiles(["jdk17-noble-graal", "jdk17-jammy-graal"], graal17_version, graal17_amd64_sha, graal17_aarch64_sha)
 
     if base_version < 8:
         return
 
-    graal21_version, graal21_amd64_sha, graal21_aarch64_sha = fetch_graalvm_version("21")
+    graal21_version, graal21_amd64_sha, graal21_aarch64_sha = fetch_graalvm_release_info("21")
     update_graalvm_dockerfiles(["jdk21-noble-graal", "jdk21-jammy-graal"], graal21_version, graal21_amd64_sha, graal21_aarch64_sha)
 
     if base_version < 9:
-        graal24_version, graal24_amd64_sha, graal24_aarch64_sha = fetch_graalvm_version("24")
+        graal24_version, graal24_amd64_sha, graal24_aarch64_sha = fetch_graalvm_release_info("24")
         update_graalvm_dockerfiles(["jdk24-noble-graal"], graal24_version, graal24_amd64_sha, graal24_aarch64_sha)
 
         update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], graal21_version, graal21_amd64_sha, graal21_aarch64_sha, env_prefix="21")
         update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], graal24_version, graal24_amd64_sha, graal24_aarch64_sha, env_prefix="24")
     else:
-        graal25_version, graal25_amd64_sha, graal25_aarch64_sha = fetch_graalvm_version("25")
+        graal25_version, graal25_amd64_sha, graal25_aarch64_sha = fetch_graalvm_release_info("25")
         update_graalvm_dockerfiles(["jdk25-noble-graal"], graal25_version, graal25_amd64_sha, graal25_aarch64_sha)
 
         update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], graal25_version, graal25_amd64_sha, graal25_aarch64_sha, env_prefix="LTS")
