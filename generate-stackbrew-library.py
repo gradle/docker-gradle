@@ -150,7 +150,7 @@ def main():
 
         first_version = None
         for dir_path in directories:
-            dir_commit = get_directory_commit(commit, dir_path)
+            dir_commit = get_directory_commit(commit, dir_path) if int(major) >= 8 else commit
             dockerfile = run_command(["git", "show", f"{dir_commit}:{dir_path}/Dockerfile"])
 
             # Extract FROM
