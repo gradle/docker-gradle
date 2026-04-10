@@ -57,10 +57,10 @@ jobs:
           CURRENT_COMMIT: ${{ github.sha }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
       - name: Archive library file
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: gradle
           path: library-gradle
+          archive: false
       - name: Compare library files
         id: compare
         run: |
@@ -74,7 +74,7 @@ jobs:
         run: echo ${{ github.event.number }} > pr_number.txt
       - name: Upload diff and PR number
         if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pr-comment-data
           path: |
