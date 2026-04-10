@@ -74,8 +74,8 @@ def get_directories(commit):
     return dirs
 
 def get_directory_commit(branch_commit, dir_path):
-    """Get the last merge commit on the first-parent history that changed the given directory."""
-    output = run_command(["git", "log", "-1", "--first-parent", "--merges", "--format=%H", branch_commit, "--", f"{dir_path}/"])
+    """Get the latest commit on the first-parent history that changed the given directory."""
+    output = run_command(["git", "log", "-1", "--first-parent", "--format=%H", branch_commit, "--", f"{dir_path}/"])
     return output.strip()
 
 def get_arches(image, cache):
