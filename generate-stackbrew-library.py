@@ -73,6 +73,11 @@ def get_directories(commit):
     dirs.sort(key=sort_key)
     return dirs
 
+def get_directory_commit(branch_commit, dir_path):
+    """Get the last commit that changed the given directory."""
+    output = run_command(["git", "log", "-1", "--format=%H", branch_commit, "--", f"{dir_path}/"])
+    return output.strip()
+
 def get_arches(image, cache):
     if image in cache:
         return cache[image]
@@ -145,7 +150,8 @@ def main():
 
         first_version = None
         for dir_path in directories:
-            dockerfile = run_command(["git", "show", f"{commit}:{dir_path}/Dockerfile"])
+            dir_commit = get_directory_commit(commit, dir_path)
+            dockerfile = run_command(["git", "show", f"{dir_commit}:{dir_path}/Dockerfile"])
 
             # Extract FROM
             from_match = re.search(r"^\s*FROM\s+(\S+)", dockerfile, re.MULTILINE | re.IGNORECASE)
@@ -298,7 +304,7 @@ def main():
             print(f"\nTags: {', '.join(actual_tags)}")
             print(f"Architectures: {arches}")
             print(f"GitFetch: refs/heads/{branch}")
-            print(f"GitCommit: {commit}")
+            print(f"GitCommit: {dir_commit}")
             print(f"Directory: {dir_path}")
 
 if __name__ == "__main__":
