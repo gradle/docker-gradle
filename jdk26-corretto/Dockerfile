@@ -1,8 +1,4 @@
-FROM amazoncorretto:25-al2023-jdk
-
-COPY --from=amazoncorretto:26-al2023-jdk /usr/lib/jvm/java-26-amazon-corretto /usr/lib/jvm/java-26-amazon-corretto
-ENV JAVA_LTS_HOME=/usr/lib/jvm/java-25-amazon-corretto
-ENV JAVA_CURRENT_HOME=/usr/lib/jvm/java-26-amazon-corretto
+FROM amazoncorretto:26-al2023-jdk
 
 CMD ["gradle"]
 
@@ -23,7 +19,7 @@ RUN set -o errexit -o nounset \
         # Gradle dependencies
         findutils \
         \
-        # VCSes
+        # VCS dependencies
         git \
         git-lfs \
         mercurial \
@@ -56,14 +52,10 @@ RUN set -o errexit -o nounset \
     && useradd --system --gid gradle --uid 1000 --shell /bin/bash --create-home gradle \
     && mkdir /home/gradle/.gradle \
     && chown --recursive gradle:gradle /home/gradle \
+    && chmod --recursive o+rwx /home/gradle \
     \
     && echo "Symlinking root Gradle cache to gradle Gradle cache" \
-    && ln --symbolic /home/gradle/.gradle /root/.gradle \
-    \
-    && echo "Ensuring Gradle detects installed JDKs" \
-    && echo "org.gradle.java.installations.auto-detect=false" > /home/gradle/.gradle/gradle.properties \
-    && echo "org.gradle.java.installations.auto-download=false" >> /home/gradle/.gradle/gradle.properties \
-    && echo "org.gradle.java.installations.fromEnv=JAVA_LTS_HOME,JAVA_CURRENT_HOME" >> /home/gradle/.gradle/gradle.properties
+    && ln --symbolic /home/gradle/.gradle /root/.gradle
 
 VOLUME /home/gradle/.gradle
 
@@ -75,7 +67,7 @@ RUN set -o errexit -o nounset \
     && echo "Downloading Gradle" \
     && wget --no-verbose --output-document=gradle.zip "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" \
     \
-    && echo "Checking download hash" \
+    && echo "Checking Gradle download hash" \
     && echo "${GRADLE_DOWNLOAD_SHA256} *gradle.zip" | sha256sum --check - \
     \
     && echo "Installing Gradle" \

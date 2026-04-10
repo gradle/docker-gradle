@@ -1,10 +1,4 @@
-FROM eclipse-temurin:25-jdk-alpine
-
-COPY --from=eclipse-temurin:26-jdk-alpine /opt/java/openjdk /opt/java/openjdk26
-RUN set -o errexit -o nounset \
-    && ln -s /opt/java/openjdk /opt/java/openjdk25
-ENV JAVA_LTS_HOME=/opt/java/openjdk25
-ENV JAVA_CURRENT_HOME=/opt/java/openjdk26
+FROM eclipse-temurin:26-jdk-ubi10-minimal
 
 CMD ["gradle"]
 
@@ -12,38 +6,39 @@ ENV GRADLE_HOME=/opt/gradle
 
 RUN set -o errexit -o nounset \
     && echo "Adding gradle user and group" \
-    && addgroup --system --gid 1000 gradle \
-    && adduser --system --ingroup gradle --uid 1000 --shell /bin/ash gradle \
+    && groupadd --system --gid 101 gradle \
+    && useradd --system --gid gradle --uid 101 --shell /bin/bash --create-home gradle \
     && mkdir /home/gradle/.gradle \
-    && chown -R gradle:gradle /home/gradle \
+    && chown --recursive gradle:gradle /home/gradle \
+    && chmod --recursive o+rwx /home/gradle \
     \
     && echo "Symlinking root Gradle cache to gradle Gradle cache" \
-    && ln -s /home/gradle/.gradle /root/.gradle \
-   \
-   && echo "Ensuring Gradle detects installed JDKs" \
-   && echo "org.gradle.java.installations.auto-detect=false" > /home/gradle/.gradle/gradle.properties \
-   && echo "org.gradle.java.installations.auto-download=false" >> /home/gradle/.gradle/gradle.properties \
-   && echo "org.gradle.java.installations.fromEnv=JAVA_LTS_HOME,JAVA_CURRENT_HOME" >> /home/gradle/.gradle/gradle.properties
+    && ln --symbolic /home/gradle/.gradle /root/.gradle
 
 VOLUME /home/gradle/.gradle
 
 WORKDIR /home/gradle
 
 RUN set -o errexit -o nounset \
-    && apk add --no-cache \
-      # common utilities
-      make \
-      curl \
-      wget \
-      tar \
-      \
-      # VCSes
-      breezy \
-      py3-tzlocal \
-      git \
-      git-lfs \
-      mercurial \
-      subversion \
+    && microdnf install -y \
+        # common utilities
+        make \
+        curl \
+        wget \
+        tar \
+        \
+        # Gradle dependencies
+        findutils \
+        \
+        # Dockerfile dependencies
+        unzip \
+        which \
+        \
+        # VCS dependencies
+        git \
+        git-lfs \
+        subversion \
+    && microdnf clean all \
     \
     && echo "Testing common utilities" \
     && which awk \
@@ -61,7 +56,6 @@ RUN set -o errexit -o nounset \
     && echo "Testing VCSes" \
     && which git \
     && which git-lfs \
-    && which hg \
     && which svn
 
 ENV GRADLE_VERSION=9.4.1
@@ -71,13 +65,13 @@ RUN set -o errexit -o nounset \
     && wget --no-verbose --output-document=gradle.zip "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" \
     \
     && echo "Checking Gradle download hash" \
-    && echo "${GRADLE_DOWNLOAD_SHA256} *gradle.zip" | sha256sum -c - \
+    && echo "${GRADLE_DOWNLOAD_SHA256} *gradle.zip" | sha256sum --check - \
     \
     && echo "Installing Gradle" \
     && unzip gradle.zip \
     && rm gradle.zip \
     && mv "gradle-${GRADLE_VERSION}" "${GRADLE_HOME}/" \
-    && ln -s "${GRADLE_HOME}/bin/gradle" /usr/bin/gradle
+    && ln --symbolic "${GRADLE_HOME}/bin/gradle" /usr/bin/gradle
 
 USER gradle
 
