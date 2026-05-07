@@ -8,11 +8,12 @@ RUN set -o errexit -o nounset \
     && dnf install -y \
         # common utilities
         make \
+        curl-minimal \
+        wget \
         tar \
         \
         # Dockerfile dependencies
         unzip \
-        wget \
         which \
         \
         # Gradle dependencies
@@ -79,6 +80,6 @@ USER gradle
 
 RUN set -o errexit -o nounset \
     && echo "Testing Gradle installation" \
-    && gradle --version
+    && gradle --stacktrace --debug --version
 
 USER root

@@ -1,4 +1,6 @@
 name: GitHub CI
+permissions:
+  contents: read
 
 on:
   push:
@@ -45,10 +47,10 @@ jobs:
           - jdk21-ubi9
           - jdk21-jammy-graal
           - jdk21-noble-graal
-          - jdk24-noble-graal
+
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: build
         run: |
           cd "${{ matrix.directory }}"

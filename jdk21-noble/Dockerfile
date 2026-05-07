@@ -26,6 +26,9 @@ RUN set -o errexit -o nounset \
     && apt-get install --yes --no-install-recommends \
         # common utilities
         make \
+        curl \
+        wget \
+        tar \
         \
         # Dockerfile dependencies
         unzip \
@@ -78,6 +81,6 @@ USER gradle
 
 RUN set -o errexit -o nounset \
     && echo "Testing Gradle installation" \
-    && gradle --version
+    && gradle --stacktrace --debug --version
 
 USER root

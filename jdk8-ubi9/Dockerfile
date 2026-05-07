@@ -23,6 +23,9 @@ RUN set -o errexit -o nounset \
     && microdnf install -y \
         # common utilities
         make \
+        curl-minimal \
+        wget \
+        tar \
         \
         # Gradle dependencies
         findutils \
@@ -74,6 +77,6 @@ USER gradle
 
 RUN set -o errexit -o nounset \
     && echo "Testing Gradle installation" \
-    && gradle --version
+    && gradle --stacktrace --debug --version
 
 USER root

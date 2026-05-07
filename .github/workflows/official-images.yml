@@ -1,0 +1,82 @@
+name: Official Images Updates
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "master"
+      - "8"
+      - "7"
+      - "6"
+  pull_request:
+
+permissions: {}
+
+jobs:
+  library-gradle:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # we need all branches so we can read Dockerfiles from them
+      - name: Provision best available generate-stackbrew-library.py and toolbox
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          CURRENT_COMMIT: ${{ github.sha }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        shell: bash
+        run: |
+          # if the generate-stackbrew-library.py was modified in the current PR, use that version; otherwise, use the version from master
+          if [ "${EVENT_NAME}" == "pull_request" ] && [ "$(git diff --name-only "origin/$BASE_REF..$CURRENT_COMMIT" -- 'generate-stackbrew-library.py' | wc -l)" -gt 0 ]; then
+            echo "Using modified generate-stackbrew-library.py"
+          else
+            echo "Using generate-stackbrew-library.py from master branch"
+            git checkout origin/master -- generate-stackbrew-library.py
+          fi
+          # if the toolbox Dockerfile was modified in the current PR, use that version; otherwise, use the version from master
+          if [ "${EVENT_NAME}" == "pull_request" ] && [ "$(git diff --name-only "origin/$BASE_REF..$CURRENT_COMMIT" -- 'toolbox/Dockerfile' | wc -l)" -gt 0 ]; then
+            echo "Using modified toolbox/Dockerfile"
+          else
+            echo "Using toolbox/Dockerfile from master branch"
+            git checkout origin/master -- toolbox/Dockerfile
+          fi
+      - run: docker build --tag gradle-dockerhub-toolbox -f toolbox/Dockerfile toolbox
+      - name: Generate library file
+        run: |
+          docker run --rm \
+            -v "$PWD:/ws" \
+            -w /ws \
+            -e CURRENT_COMMIT \
+            -e BASE_SHA \
+            gradle-dockerhub-toolbox \
+            bash -c 'if [ -n "$BASE_SHA" ]; then ./generate-stackbrew-library.py --substitute "$BASE_SHA" "$CURRENT_COMMIT"; else ./generate-stackbrew-library.py; fi > library-gradle'
+        env:
+          CURRENT_COMMIT: ${{ github.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      - name: Archive library file
+        uses: actions/upload-artifact@v7
+        with:
+          path: library-gradle
+          archive: false
+      - name: Compare library files
+        id: compare
+        run: |
+          curl -q -sS -o /dev/stdout "https://raw.githubusercontent.com/docker-library/official-images/refs/heads/master/library/gradle" | \
+            sed -E "s/GitCommit: .*/GitCommit: 0000000000000000000000000000000000000000/" > existing-library-gradle
+          sed -E "1d; s/GitCommit: .*/GitCommit: 0000000000000000000000000000000000000000/" library-gradle > updated-library-gradle
+          DIFF_OUTPUT=$(diff existing-library-gradle updated-library-gradle || :)
+          echo "$DIFF_OUTPUT" > diff.txt
+      - name: Save PR number
+        if: github.event_name == 'pull_request'
+        run: echo ${{ github.event.number }} > pr_number.txt
+      - name: Upload diff and PR number
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: pr-comment-data
+          path: |
+            diff.txt
+            pr_number.txt

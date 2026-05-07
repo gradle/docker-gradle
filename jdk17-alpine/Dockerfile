@@ -22,8 +22,10 @@ WORKDIR /home/gradle
 RUN set -o errexit -o nounset \
     && apk add --no-cache \
       # common utilities
-      curl \
       make \
+      curl \
+      wget \
+      tar \
       \
       # VCSes
       breezy \
@@ -71,6 +73,6 @@ USER gradle
 
 RUN set -o errexit -o nounset \
     && echo "Testing Gradle installation" \
-    && gradle --version
+    && gradle --stacktrace --debug --version
 
 USER root
