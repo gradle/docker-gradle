@@ -1,7 +1,10 @@
+__pycache__/
 *.DS_Store
-desktop.ini
-.gradle/
-build/
-.idea/
 *.tar.gz
 *.zip
+.gradle/
+.idea/
+.venv/
+.vscode/
+build/
+desktop.ini
