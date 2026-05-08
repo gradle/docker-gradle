@@ -65,7 +65,8 @@ def get_directories(commit):
         elif "ubi" in d: variant_score = 3
         elif "graal" in d: variant_score = 4
 
-        ubuntu_score = -2
+        ubuntu_score = -3
+        if "noble" in d: ubuntu_score = -2
         if "jammy" in d: ubuntu_score = -1
 
         return (is_lts, jdk_sort_val, variant_score, ubuntu_score, d)

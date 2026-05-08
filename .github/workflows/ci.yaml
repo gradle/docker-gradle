@@ -28,26 +28,33 @@ jobs:
         directory:
           - jdk17-jammy
           - jdk17-noble
+          - jdk17-resolute
           - jdk17-alpine
           - jdk17-corretto
           - jdk17-ubi10
           - jdk17-ubi9
           - jdk17-jammy-graal
           - jdk17-noble-graal
+          - jdk17-resolute-graal
           - jdk21-jammy
           - jdk21-noble
+          - jdk21-resolute
           - jdk21-alpine
           - jdk21-corretto
           - jdk21-ubi10
           - jdk21-ubi9
           - jdk21-jammy-graal
           - jdk21-noble-graal
+          - jdk21-resolute-graal
           - jdk25-noble
+          - jdk25-resolute
           - jdk25-alpine
           - jdk25-corretto
           - jdk25-ubi10
           - jdk25-noble-graal
+          - jdk25-resolute-graal
           - jdk26-noble
+          - jdk26-resolute
           - jdk26-alpine
           - jdk26-corretto
           - jdk26-ubi10

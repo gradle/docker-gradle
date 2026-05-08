@@ -128,13 +128,13 @@ def main():
 
     # GraalVM updates
     graal17_version, graal17_amd64_sha, graal17_aarch64_sha = fetch_graalvm_release_info("17")
-    update_graalvm_dockerfiles(["jdk17-noble-graal", "jdk17-jammy-graal"], graal17_version, graal17_amd64_sha, graal17_aarch64_sha)
+    update_graalvm_dockerfiles(["jdk17-noble-graal", "jdk17-resolute-graal", "jdk17-jammy-graal"], graal17_version, graal17_amd64_sha, graal17_aarch64_sha)
 
     if base_version < 8:
         return
 
     graal21_version, graal21_amd64_sha, graal21_aarch64_sha = fetch_graalvm_release_info("21")
-    update_graalvm_dockerfiles(["jdk21-noble-graal", "jdk21-jammy-graal"], graal21_version, graal21_amd64_sha, graal21_aarch64_sha)
+    update_graalvm_dockerfiles(["jdk21-noble-graal", "jdk21-resolute-graal", "jdk21-jammy-graal"], graal21_version, graal21_amd64_sha, graal21_aarch64_sha)
 
     if base_version < 9:
         graal24_version, graal24_amd64_sha, graal24_aarch64_sha = fetch_graalvm_release_info("24")
@@ -144,7 +144,7 @@ def main():
         update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], graal24_version, graal24_amd64_sha, graal24_aarch64_sha, env_prefix="24")
     else:
         graal25_version, graal25_amd64_sha, graal25_aarch64_sha = fetch_graalvm_release_info("25")
-        update_graalvm_dockerfiles(["jdk25-noble-graal"], graal25_version, graal25_amd64_sha, graal25_aarch64_sha)
+        update_graalvm_dockerfiles(["jdk25-noble-graal", "jdk25-resolute-graal"], graal25_version, graal25_amd64_sha, graal25_aarch64_sha)
 
         update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], graal25_version, graal25_amd64_sha, graal25_aarch64_sha, env_prefix="LTS")
         update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], graal25_version, graal25_amd64_sha, graal25_aarch64_sha, env_prefix="CURRENT")
