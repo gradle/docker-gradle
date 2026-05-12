@@ -58,8 +58,8 @@ RUN set -o errexit -o nounset \
     && which git-lfs \
     && which svn
 
-ENV GRADLE_VERSION=9.5.0
-ARG GRADLE_DOWNLOAD_SHA256=553c78f50dafcd54d65b9a444649057857469edf836431389695608536d6b746
+ENV GRADLE_VERSION=9.5.1
+ARG GRADLE_DOWNLOAD_SHA256=bafc141b619ad6350fd975fc903156dd5c151998cc8b058e8c1044ab5f7b031f
 RUN set -o errexit -o nounset \
     && echo "Downloading Gradle" \
     && wget --no-verbose --output-document=gradle.zip "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" \
