@@ -8,6 +8,7 @@ fi
 
 exec docker run --rm -ti \
 	-v "$(pwd):/workspace" \
+	-e GITHUB_TOKEN \
 	-w /workspace \
 	gradle-dockerhub-toolbox \
 	python3 "$@"
