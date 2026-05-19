@@ -4,6 +4,16 @@ import re
 import os
 import sys
 import hashlib
+from urllib.parse import urlparse
+
+def github_headers(url):
+    token = os.environ.get("GITHUB_TOKEN")
+    if not token:
+        return {}
+    host = urlparse(url).hostname or ""
+    if host == "api.github.com" or host == "github.com" or host.endswith(".github.com") or host == "objects.githubusercontent.com":
+        return {"Authorization": f"Bearer {token}"}
+    return {}
 
 def get_gradle_version(base_version):
     response = requests.get(f"https://services.gradle.org/versions/{base_version}", timeout=10)
@@ -25,7 +35,7 @@ def get_gradle_version(base_version):
 
 def calculate_sha256(url):
     sha256_hash = hashlib.sha256()
-    with requests.get(url, stream=True, timeout=300) as r:
+    with requests.get(url, stream=True, timeout=300, headers=github_headers(url)) as r:
         r.raise_for_status()
         for chunk in r.iter_content(chunk_size=8192):
             sha256_hash.update(chunk)
@@ -33,7 +43,7 @@ def calculate_sha256(url):
 
 def get_sha256(url):
     try:
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=10, headers=github_headers(url))
         response.raise_for_status()
         return response.text.strip()
     except requests.exceptions.HTTPError as e:
@@ -44,7 +54,8 @@ def get_sha256(url):
         raise
 
 def get_graalvm_info(jdk_version):
-    response = requests.get("https://api.github.com/repos/graalvm/graalvm-ce-builds/releases?per_page=20&page=1", timeout=10)
+    url = "https://api.github.com/repos/graalvm/graalvm-ce-builds/releases?per_page=20&page=1"
+    response = requests.get(url, timeout=10, headers=github_headers(url))
     response.raise_for_status()
     releases = response.json()
 
@@ -128,13 +139,13 @@ def main():
 
     # GraalVM updates
     graal17_version, graal17_amd64_sha, graal17_aarch64_sha = fetch_graalvm_release_info("17")
-    update_graalvm_dockerfiles(["jdk17-noble-graal", "jdk17-jammy-graal"], graal17_version, graal17_amd64_sha, graal17_aarch64_sha)
+    update_graalvm_dockerfiles(["jdk17-noble-graal", "jdk17-resolute-graal", "jdk17-jammy-graal"], graal17_version, graal17_amd64_sha, graal17_aarch64_sha)
 
     if base_version < 8:
         return
 
     graal21_version, graal21_amd64_sha, graal21_aarch64_sha = fetch_graalvm_release_info("21")
-    update_graalvm_dockerfiles(["jdk21-noble-graal", "jdk21-jammy-graal"], graal21_version, graal21_amd64_sha, graal21_aarch64_sha)
+    update_graalvm_dockerfiles(["jdk21-noble-graal", "jdk21-resolute-graal", "jdk21-jammy-graal"], graal21_version, graal21_amd64_sha, graal21_aarch64_sha)
 
     if base_version < 9:
         graal24_version, graal24_amd64_sha, graal24_aarch64_sha = fetch_graalvm_release_info("24")
@@ -144,7 +155,7 @@ def main():
         update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], graal24_version, graal24_amd64_sha, graal24_aarch64_sha, env_prefix="24")
     else:
         graal25_version, graal25_amd64_sha, graal25_aarch64_sha = fetch_graalvm_release_info("25")
-        update_graalvm_dockerfiles(["jdk25-noble-graal"], graal25_version, graal25_amd64_sha, graal25_aarch64_sha)
+        update_graalvm_dockerfiles(["jdk25-noble-graal", "jdk25-resolute-graal"], graal25_version, graal25_amd64_sha, graal25_aarch64_sha)
 
         update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], graal25_version, graal25_amd64_sha, graal25_aarch64_sha, env_prefix="LTS")
         update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], graal25_version, graal25_amd64_sha, graal25_aarch64_sha, env_prefix="CURRENT")
