@@ -64,7 +64,7 @@ jobs:
           - jdk-lts-and-current-graal
     steps:
       - name: checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.2
       - name: build
         run: |
           cd "${{ matrix.directory }}"
