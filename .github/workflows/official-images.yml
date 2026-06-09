@@ -19,7 +19,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v6.0.3
         with:
           fetch-depth: 0 # we need all branches so we can read Dockerfiles from them
       - name: Provision best available generate-stackbrew-library.py and toolbox
