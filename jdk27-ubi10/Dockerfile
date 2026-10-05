@@ -1,15 +1,13 @@
-FROM eclipse-temurin:26-jdk-resolute
+FROM eclipse-temurin:27-jdk-ubi10-minimal
 
 CMD ["gradle"]
 
 ENV GRADLE_HOME=/opt/gradle
 
 RUN set -o errexit -o nounset \
-    && echo "Renaming ubuntu user and group to gradle" \
-    && groupmod --new-name gradle ubuntu \
-    && mkdir /home/gradle \
-    && usermod --login gradle --home /home/gradle --groups gradle ubuntu \
-    && chown gradle /home/gradle \
+    && echo "Adding gradle user and group" \
+    && groupadd --system --gid 101 gradle \
+    && useradd --system --gid gradle --uid 101 --shell /bin/bash --create-home gradle \
     && mkdir /home/gradle/.gradle \
     && chown --recursive gradle:gradle /home/gradle \
     && chmod --recursive o+rwx /home/gradle \
@@ -22,25 +20,25 @@ VOLUME /home/gradle/.gradle
 WORKDIR /home/gradle
 
 RUN set -o errexit -o nounset \
-    && apt-get update \
-    && apt-get install --yes --no-install-recommends \
+    && microdnf install -y \
         # common utilities
         make \
         curl \
         wget \
         tar \
         \
+        # Gradle dependencies
+        findutils \
+        \
         # Dockerfile dependencies
         unzip \
+        which \
         \
-        # VCSes
-        brz \
+        # VCS dependencies
         git \
         git-lfs \
-        mercurial \
-        openssh-client \
         subversion \
-    && rm --recursive --force /var/lib/apt/lists/* \
+    && microdnf clean all \
     \
     && echo "Testing common utilities" \
     && which awk \
@@ -56,10 +54,8 @@ RUN set -o errexit -o nounset \
     && which wget \
     \
     && echo "Testing VCSes" \
-    && which brz \
     && which git \
     && which git-lfs \
-    && which hg \
     && which svn
 
 ENV GRADLE_VERSION=9.8.0

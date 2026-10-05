@@ -1,39 +1,46 @@
-FROM eclipse-temurin:26-jdk-alpine
+FROM eclipse-temurin:27-jdk-noble
 
 CMD ["gradle"]
 
 ENV GRADLE_HOME=/opt/gradle
 
 RUN set -o errexit -o nounset \
-    && echo "Adding gradle user and group" \
-    && addgroup --system --gid 1000 gradle \
-    && adduser --system --ingroup gradle --uid 1000 --shell /bin/ash gradle \
+    && echo "Renaming ubuntu user and group to gradle" \
+    && groupmod --new-name gradle ubuntu \
+    && mkdir /home/gradle \
+    && usermod --login gradle --home /home/gradle --groups gradle ubuntu \
+    && chown gradle /home/gradle \
     && mkdir /home/gradle/.gradle \
-    && chown -R gradle:gradle /home/gradle \
-    && chmod -R o+rwx /home/gradle \
+    && chown --recursive gradle:gradle /home/gradle \
+    && chmod --recursive o+rwx /home/gradle \
     \
     && echo "Symlinking root Gradle cache to gradle Gradle cache" \
-    && ln -s /home/gradle/.gradle /root/.gradle
+    && ln --symbolic /home/gradle/.gradle /root/.gradle
 
 VOLUME /home/gradle/.gradle
 
 WORKDIR /home/gradle
 
 RUN set -o errexit -o nounset \
-    && apk add --no-cache \
-      # common utilities
-      make \
-      curl \
-      wget \
-      tar \
-      \
-      # VCSes
-      breezy \
-      py3-tzlocal \
-      git \
-      git-lfs \
-      mercurial \
-      subversion \
+    && apt-get update \
+    && apt-get install --yes --no-install-recommends \
+        # common utilities
+        make \
+        curl \
+        wget \
+        tar \
+        \
+        # Dockerfile dependencies
+        unzip \
+        \
+        # VCSes
+        brz \
+        git \
+        git-lfs \
+        mercurial \
+        openssh-client \
+        subversion \
+    && rm --recursive --force /var/lib/apt/lists/* \
     \
     && echo "Testing common utilities" \
     && which awk \
@@ -49,6 +56,7 @@ RUN set -o errexit -o nounset \
     && which wget \
     \
     && echo "Testing VCSes" \
+    && which brz \
     && which git \
     && which git-lfs \
     && which hg \
@@ -61,13 +69,13 @@ RUN set -o errexit -o nounset \
     && wget --no-verbose --output-document=gradle.zip "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" \
     \
     && echo "Checking Gradle download hash" \
-    && echo "${GRADLE_DOWNLOAD_SHA256} *gradle.zip" | sha256sum -c - \
+    && echo "${GRADLE_DOWNLOAD_SHA256} *gradle.zip" | sha256sum --check - \
     \
     && echo "Installing Gradle" \
     && unzip gradle.zip \
     && rm gradle.zip \
     && mv "gradle-${GRADLE_VERSION}" "${GRADLE_HOME}/" \
-    && ln -s "${GRADLE_HOME}/bin/gradle" /usr/bin/gradle
+    && ln --symbolic "${GRADLE_HOME}/bin/gradle" /usr/bin/gradle
 
 USER gradle
 
