@@ -1,4 +1,4 @@
-FROM eclipse-temurin:26-jdk-ubi10-minimal
+FROM eclipse-temurin:27-jdk-alpine
 
 CMD ["gradle"]
 
@@ -6,39 +6,34 @@ ENV GRADLE_HOME=/opt/gradle
 
 RUN set -o errexit -o nounset \
     && echo "Adding gradle user and group" \
-    && groupadd --system --gid 101 gradle \
-    && useradd --system --gid gradle --uid 101 --shell /bin/bash --create-home gradle \
+    && addgroup --system --gid 1000 gradle \
+    && adduser --system --ingroup gradle --uid 1000 --shell /bin/ash gradle \
     && mkdir /home/gradle/.gradle \
-    && chown --recursive gradle:gradle /home/gradle \
-    && chmod --recursive o+rwx /home/gradle \
+    && chown -R gradle:gradle /home/gradle \
+    && chmod -R o+rwx /home/gradle \
     \
     && echo "Symlinking root Gradle cache to gradle Gradle cache" \
-    && ln --symbolic /home/gradle/.gradle /root/.gradle
+    && ln -s /home/gradle/.gradle /root/.gradle
 
 VOLUME /home/gradle/.gradle
 
 WORKDIR /home/gradle
 
 RUN set -o errexit -o nounset \
-    && microdnf install -y \
-        # common utilities
-        make \
-        curl \
-        wget \
-        tar \
-        \
-        # Gradle dependencies
-        findutils \
-        \
-        # Dockerfile dependencies
-        unzip \
-        which \
-        \
-        # VCS dependencies
-        git \
-        git-lfs \
-        subversion \
-    && microdnf clean all \
+    && apk add --no-cache \
+      # common utilities
+      make \
+      curl \
+      wget \
+      tar \
+      \
+      # VCSes
+      breezy \
+      py3-tzlocal \
+      git \
+      git-lfs \
+      mercurial \
+      subversion \
     \
     && echo "Testing common utilities" \
     && which awk \
@@ -56,6 +51,7 @@ RUN set -o errexit -o nounset \
     && echo "Testing VCSes" \
     && which git \
     && which git-lfs \
+    && which hg \
     && which svn
 
 ENV GRADLE_VERSION=9.8.0
@@ -65,13 +61,13 @@ RUN set -o errexit -o nounset \
     && wget --no-verbose --output-document=gradle.zip "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" \
     \
     && echo "Checking Gradle download hash" \
-    && echo "${GRADLE_DOWNLOAD_SHA256} *gradle.zip" | sha256sum --check - \
+    && echo "${GRADLE_DOWNLOAD_SHA256} *gradle.zip" | sha256sum -c - \
     \
     && echo "Installing Gradle" \
     && unzip gradle.zip \
     && rm gradle.zip \
     && mv "gradle-${GRADLE_VERSION}" "${GRADLE_HOME}/" \
-    && ln --symbolic "${GRADLE_HOME}/bin/gradle" /usr/bin/gradle
+    && ln -s "${GRADLE_HOME}/bin/gradle" /usr/bin/gradle
 
 USER gradle
 

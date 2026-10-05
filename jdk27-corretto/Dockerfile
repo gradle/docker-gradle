@@ -1,46 +1,31 @@
-FROM eclipse-temurin:26-jdk-noble
+FROM amazoncorretto:27-al2023-jdk
 
 CMD ["gradle"]
 
 ENV GRADLE_HOME=/opt/gradle
 
 RUN set -o errexit -o nounset \
-    && echo "Renaming ubuntu user and group to gradle" \
-    && groupmod --new-name gradle ubuntu \
-    && mkdir /home/gradle \
-    && usermod --login gradle --home /home/gradle --groups gradle ubuntu \
-    && chown gradle /home/gradle \
-    && mkdir /home/gradle/.gradle \
-    && chown --recursive gradle:gradle /home/gradle \
-    && chmod --recursive o+rwx /home/gradle \
-    \
-    && echo "Symlinking root Gradle cache to gradle Gradle cache" \
-    && ln --symbolic /home/gradle/.gradle /root/.gradle
-
-VOLUME /home/gradle/.gradle
-
-WORKDIR /home/gradle
-
-RUN set -o errexit -o nounset \
-    && apt-get update \
-    && apt-get install --yes --no-install-recommends \
+    && dnf install -y \
         # common utilities
         make \
-        curl \
+        curl-minimal \
         wget \
         tar \
         \
         # Dockerfile dependencies
         unzip \
+        which \
         \
-        # VCSes
-        brz \
+        # Gradle dependencies
+        findutils \
+        \
+        # VCS dependencies
         git \
         git-lfs \
         mercurial \
-        openssh-client \
         subversion \
-    && rm --recursive --force /var/lib/apt/lists/* \
+    && dnf clean all \
+    && rm -rf /var/cache/yum \
     \
     && echo "Testing common utilities" \
     && which awk \
@@ -56,11 +41,25 @@ RUN set -o errexit -o nounset \
     && which wget \
     \
     && echo "Testing VCSes" \
-    && which brz \
     && which git \
     && which git-lfs \
     && which hg \
     && which svn
+
+RUN set -o errexit -o nounset \
+    && echo "Adding gradle user and group" \
+    && groupadd --system --gid 1000 gradle \
+    && useradd --system --gid gradle --uid 1000 --shell /bin/bash --create-home gradle \
+    && mkdir /home/gradle/.gradle \
+    && chown --recursive gradle:gradle /home/gradle \
+    && chmod --recursive o+rwx /home/gradle \
+    \
+    && echo "Symlinking root Gradle cache to gradle Gradle cache" \
+    && ln --symbolic /home/gradle/.gradle /root/.gradle
+
+VOLUME /home/gradle/.gradle
+
+WORKDIR /home/gradle
 
 ENV GRADLE_VERSION=9.8.0
 ARG GRADLE_DOWNLOAD_SHA256=bafd5ce9cfaea0fbccfdc8439a1ac42fbd4cd9c89dc9a988228d8a2639a58e6c

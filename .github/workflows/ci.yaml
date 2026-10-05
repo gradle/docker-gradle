@@ -53,11 +53,10 @@ jobs:
           - jdk25-ubi10
           - jdk25-noble-graal
           - jdk25-resolute-graal
-          - jdk26-noble
-          - jdk26-resolute
-          - jdk26-alpine
-          - jdk26-corretto
-          - jdk26-ubi10
+          - jdk27-resolute
+          - jdk27-alpine
+          - jdk27-corretto
+          - jdk27-ubi10
           - jdk-lts-and-current
           - jdk-lts-and-current-alpine
           - jdk-lts-and-current-corretto
