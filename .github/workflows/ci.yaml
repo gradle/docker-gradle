@@ -53,7 +53,6 @@ jobs:
           - jdk25-ubi10
           - jdk25-noble-graal
           - jdk25-resolute-graal
-          - jdk27-noble
           - jdk27-resolute
           - jdk27-alpine
           - jdk27-corretto
