@@ -8,12 +8,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.X509ExtendedTrustManager;
 
 /**
  * Connects to each host with the JVM's default TLS settings and trust store.
@@ -44,11 +45,18 @@ public class BlockedCertsProbe {
         }
 
         System.out.println("java.home=" + System.getProperty("java.home") + " java.runtime.version=" + System.getProperty("java.runtime.version"));
-        Set<String> trustedSubjects = trustedSubjects();
+        X509ExtendedTrustManager defaultTrustManager = defaultTrustManager();
+        Set<String> trustedSubjects = new HashSet<>();
+        for (X509Certificate certificate : defaultTrustManager.getAcceptedIssuers()) {
+            trustedSubjects.add(certificate.getSubjectX500Principal().getName());
+        }
         int failures = 0;
         int blockedByList = 0;
         for (String host : blocked) {
-            Throwable error = connect(host, (SSLSocketFactory) SSLSocketFactory.getDefault());
+            RecordingTrustManager trustManager = new RecordingTrustManager(defaultTrustManager);
+            SSLContext context = SSLContext.getInstance("TLS");
+            context.init(null, new TrustManager[]{trustManager}, null);
+            Throwable error = connect(host, context.getSocketFactory());
             String message = error == null ? "" : String.valueOf(rootCause(error).getMessage());
             if (error == null) {
                 failures++;
@@ -57,7 +65,7 @@ public class BlockedCertsProbe {
                 blockedByList++;
                 System.out.println("OK      " + host + ": rejected, " + message);
             } else if (message.contains("unable to find valid certification path")) {
-                String trusted = trustedIssuer(host, trustedSubjects);
+                String trusted = trustedIssuer(trustManager.chain, trustedSubjects);
                 if (trusted == null) {
                     System.out.println("OK      " + host + ": rejected, no trusted issuer in this JVM's trust store");
                 } else {
@@ -104,25 +112,10 @@ public class BlockedCertsProbe {
         }
     }
 
-    // Fetches the chain without validating it, and returns the first issuer that the default trust store has.
-    private static String trustedIssuer(String host, Set<String> trustedSubjects) throws Exception {
-        List<X509Certificate> chain = new ArrayList<>();
-        X509TrustManager capture = new X509TrustManager() {
-            public void checkClientTrusted(X509Certificate[] certs, String authType) throws CertificateException {
-                throw new CertificateException("not used");
-            }
-            public void checkServerTrusted(X509Certificate[] certs, String authType) {
-                chain.addAll(List.of(certs));
-            }
-            public X509Certificate[] getAcceptedIssuers() {
-                return new X509Certificate[0];
-            }
-        };
-        SSLContext context = SSLContext.getInstance("TLS");
-        context.init(null, new TrustManager[]{capture}, null);
-        connect(host, context.getSocketFactory());
+    // Returns the first issuer in the chain the server sent that the default trust store has.
+    private static String trustedIssuer(List<X509Certificate> chain, Set<String> trustedSubjects) {
         if (chain.isEmpty()) {
-            return "an unknown issuer (could not fetch the chain)";
+            return "an unknown issuer (the server sent no chain)";
         }
         for (X509Certificate certificate : chain) {
             String issuer = certificate.getIssuerX500Principal().getName();
@@ -133,18 +126,15 @@ public class BlockedCertsProbe {
         return null;
     }
 
-    private static Set<String> trustedSubjects() throws Exception {
+    private static X509ExtendedTrustManager defaultTrustManager() throws Exception {
         TrustManagerFactory factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         factory.init((KeyStore) null);
-        Set<String> subjects = new HashSet<>();
         for (TrustManager manager : factory.getTrustManagers()) {
-            if (manager instanceof X509TrustManager) {
-                for (X509Certificate certificate : ((X509TrustManager) manager).getAcceptedIssuers()) {
-                    subjects.add(certificate.getSubjectX500Principal().getName());
-                }
+            if (manager instanceof X509ExtendedTrustManager) {
+                return (X509ExtendedTrustManager) manager;
             }
         }
-        return subjects;
+        throw new IllegalStateException("No X509ExtendedTrustManager in the default TrustManagerFactory");
     }
 
     private static Throwable rootCause(Throwable error) {
@@ -152,5 +142,53 @@ public class BlockedCertsProbe {
             error = error.getCause();
         }
         return error;
+    }
+
+    // Records the chain the server sends, then leaves every decision to the default trust manager.
+    private static class RecordingTrustManager extends X509ExtendedTrustManager {
+        private final X509ExtendedTrustManager delegate;
+        private final List<X509Certificate> chain = new ArrayList<>();
+
+        RecordingTrustManager(X509ExtendedTrustManager delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] certificates, String authType, Socket socket) throws CertificateException {
+            chain.addAll(List.of(certificates));
+            delegate.checkServerTrusted(certificates, authType, socket);
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] certificates, String authType, SSLEngine engine) throws CertificateException {
+            chain.addAll(List.of(certificates));
+            delegate.checkServerTrusted(certificates, authType, engine);
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] certificates, String authType) throws CertificateException {
+            chain.addAll(List.of(certificates));
+            delegate.checkServerTrusted(certificates, authType);
+        }
+
+        @Override
+        public void checkClientTrusted(X509Certificate[] certificates, String authType, Socket socket) throws CertificateException {
+            delegate.checkClientTrusted(certificates, authType, socket);
+        }
+
+        @Override
+        public void checkClientTrusted(X509Certificate[] certificates, String authType, SSLEngine engine) throws CertificateException {
+            delegate.checkClientTrusted(certificates, authType, engine);
+        }
+
+        @Override
+        public void checkClientTrusted(X509Certificate[] certificates, String authType) throws CertificateException {
+            delegate.checkClientTrusted(certificates, authType);
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return delegate.getAcceptedIssuers();
+        }
     }
 }
