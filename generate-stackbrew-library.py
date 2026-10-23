@@ -14,33 +14,52 @@ def run_command(command, input_str=None):
         result.check_returncode()
     return result.stdout
 
-def get_git_remote():
+def get_git_remote(explicit_remote=None):
     output = run_command(["git", "remote", "-v"])
-    remotes = []
+    remotes = {}
     for line in output.splitlines():
         parts = line.split()
-        if len(parts) < 2:
-            continue
-        name, url = parts[0], parts[1]
-        remotes.append((name, url))
+        if len(parts) >= 3 and parts[2] == "(fetch)":
+            remotes[parts[0]] = parts[1]
 
-    # Prefer remotes whose URL matches the original, specific pattern.
-    for name, url in remotes:
-        if "gradle/docker-gradle" in url:
+    if explicit_remote is not None:
+        if explicit_remote not in remotes:
+            raise RuntimeError(f"Remote '{explicit_remote}' is not configured. Check 'git remote -v'.")
+        return explicit_remote
+
+    branch = subprocess.run(
+        ["git", "symbolic-ref", "--quiet", "--short", "HEAD"],
+        capture_output=True, text=True, shell=False, check=False,
+    )
+    if branch.returncode == 0:
+        tracking_remote = run_command([
+            "git", "for-each-ref", "--format=%(upstream:remotename)",
+            f"refs/heads/{branch.stdout.strip()}",
+        ]).strip()
+        if tracking_remote in remotes:
+            return tracking_remote
+
+    if "origin" in remotes:
+        return "origin"
+
+    for name, url in remotes.items():
+        if re.search(r"[:/]gradle/docker-gradle(?:\.git)?/?$", url):
             return name
 
-    # Fallback: remotes whose URL matches a broader pattern (e.g., forks).
-    for name, url in remotes:
-        if "docker-gradle" in url:
-            return name
+    raise RuntimeError("Cannot select a Git remote. Configure 'origin' or supply --remote <name>.")
 
-    # Next preference: a remote explicitly named "upstream", if present.
-    for name, _ in remotes:
-        if name == "upstream":
-            return name
-
-    # Final fallback: assume "origin" is the appropriate remote.
-    return "origin"
+def resolve_branch_commit(remote, branch):
+    ref = f"refs/remotes/{remote}/{branch}"
+    result = subprocess.run(
+        ["git", "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}"],
+        capture_output=True, text=True, shell=False, check=False,
+    )
+    if result.returncode == 0:
+        return result.stdout.strip()
+    raise RuntimeError(
+        f"Cannot resolve branch '{branch}' from remote '{remote}'. "
+        f"Run 'git fetch {remote} {branch}:refs/remotes/{remote}/{branch}' and try again."
+    )
 
 def get_directories(commit):
     output = run_command(["git", "ls-tree", "-r", "--name-only", commit])
@@ -107,6 +126,7 @@ def intersect_arches(arches1, arches2):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--remote", help="Remote containing the release branches")
     parser.add_argument("--substitute", nargs=2, action='append', help="Substitute <source_sha> <replacement_sha>")
     args = parser.parse_args()
 
@@ -114,7 +134,6 @@ def main():
     if args.substitute:
         for src, repl in args.substitute:
             substitutions[src] = repl
-            print("WARNING: using substitution, the result can't be submitted to the official images repository") # to stdout so it shows up in the generated output
 
     branches = ['master', '8']
     retired_tags = {
@@ -122,7 +141,14 @@ def main():
         'jdk24-graal-noble': True
     }
 
-    git_remote = get_git_remote()
+    try:
+        git_remote = get_git_remote(args.remote)
+        branch_commits = {branch: resolve_branch_commit(git_remote, branch) for branch in branches}
+    except RuntimeError as error:
+        sys.exit(str(error))
+
+    if substitutions:
+        print("WARNING: using substitution, the result can't be submitted to the official images repository")
 
     print("Maintainers: Louis Jacomet <louis@gradle.com> (@ljacomet),")
     print("             Christoph Obexer <cobexer@gradle.com> (@cobexer),")
@@ -135,11 +161,7 @@ def main():
     for branch in branches:
         major = '9' if branch == 'master' else branch
 
-        try:
-            commit = run_command(["git", "rev-parse", f"refs/remotes/{git_remote}/{branch}"]).strip()
-        except subprocess.CalledProcessError:
-            # Fallback for local testing or if remote ref doesn't exist
-            commit = run_command(["git", "rev-parse", branch]).strip()
+        commit = branch_commits[branch]
 
         if commit in substitutions:
             commit = substitutions[commit]
