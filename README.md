@@ -26,11 +26,13 @@ The `-graal` variants use [BellSoft Liberica Native Image Kit (NIK)](https://bel
 
 Liberica NIK provides maintained Java 17 and 21 distributions, replacing the discontinued upstream GraalVM Community Edition binaries for those Java versions. NIK's OpenJDK and GraalVM components use GPLv2 with the Classpath Exception, together with applicable component licenses; see the [NIK license](https://bell-sw.com/liberica_nik_eula/).
 
+The `jdk-lts-and-current-graal` combo image is retired. Use the Java-specific `-graal` images instead; the current Native Image distribution uses Java 25 for both LTS and current.
+
 ### Combo images
 
 Combo images are images where two different JDK versions are made available to Gradle: the latest LTS JDK and the latest (LTS or non-LTS) JDK. Gradle runs on the LTS JDK, while toolchains can target the latest JDK.
 
-- **Combo Images** → [`jdk-lts-and-current`](jdk-lts-and-current/Dockerfile), [`jdk-lts-and-current-alpine`](jdk-lts-and-current-alpine/Dockerfile), [`jdk-lts-and-current-corretto`](jdk-lts-and-current-corretto/Dockerfile), [`jdk-lts-and-current-graal`](jdk-lts-and-current-graal/Dockerfile)
+- **Combo Images** → [`jdk-lts-and-current`](jdk-lts-and-current/Dockerfile), [`jdk-lts-and-current-alpine`](jdk-lts-and-current-alpine/Dockerfile), [`jdk-lts-and-current-corretto`](jdk-lts-and-current-corretto/Dockerfile)
 
 To achieve this, the following appears in the  `/home/gradle/.gradle/gradle.properties` file of the image:
 

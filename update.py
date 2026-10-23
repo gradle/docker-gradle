@@ -125,16 +125,15 @@ def fetch_liberica_nik_release_info(jdk_version, releases):
     print(f"Latest Liberica NIK for JDK {jdk_version}: {nik_version} (Java {java_version})")
     return java_version, tag_name, nik_version, *hashes
 
-def update_liberica_nik_dockerfiles(dir_names, version, tag_name, nik_version, amd64_sha, aarch64_sha, env_prefix=""):
-    prefix = f"{env_prefix}_" if env_prefix else ""
+def update_liberica_nik_dockerfiles(dir_names, version, tag_name, nik_version, amd64_sha, aarch64_sha):
     for dir_name in dir_names:
         filepath = os.path.join(dir_name, "Dockerfile")
         for name, value in (
-            (f"JAVA_{prefix}VERSION", version),
-            (f"LIBERICA_NIK_{prefix}AMD64_DOWNLOAD_SHA256", amd64_sha),
-            (f"LIBERICA_NIK_{prefix}AARCH64_DOWNLOAD_SHA256", aarch64_sha),
-            (f"LIBERICA_NIK_{prefix}RELEASE_TAG", tag_name),
-            (f"LIBERICA_NIK_{prefix}VERSION", nik_version),
+            ("JAVA_VERSION", version),
+            ("LIBERICA_NIK_AMD64_DOWNLOAD_SHA256", amd64_sha),
+            ("LIBERICA_NIK_AARCH64_DOWNLOAD_SHA256", aarch64_sha),
+            ("LIBERICA_NIK_RELEASE_TAG", tag_name),
+            ("LIBERICA_NIK_VERSION", nik_version),
         ):
             update_file(filepath, rf"{name}=\S+", f"{name}={value}")
 
@@ -183,15 +182,9 @@ def main():
     if base_version < 9:
         nik24_info = fetch_liberica_nik_release_info("24", nik_releases)
         update_liberica_nik_dockerfiles(["jdk24-noble-graal"], *nik24_info)
-
-        update_liberica_nik_dockerfiles(["jdk-lts-and-current-graal"], *nik21_info, env_prefix="21")
-        update_liberica_nik_dockerfiles(["jdk-lts-and-current-graal"], *nik24_info, env_prefix="24")
     else:
         nik25_info = fetch_liberica_nik_release_info("25", nik_releases)
         update_liberica_nik_dockerfiles(["jdk25-noble-graal", "jdk25-resolute-graal"], *nik25_info)
-
-        update_liberica_nik_dockerfiles(["jdk-lts-and-current-graal"], *nik25_info, env_prefix="LTS")
-        update_liberica_nik_dockerfiles(["jdk-lts-and-current-graal"], *nik25_info, env_prefix="CURRENT")
 
 if __name__ == "__main__":
     main()

@@ -60,7 +60,6 @@ jobs:
           - jdk-lts-and-current
           - jdk-lts-and-current-alpine
           - jdk-lts-and-current-corretto
-          - jdk-lts-and-current-graal
     steps:
       - name: checkout
         uses: actions/checkout@v7.0.1
