@@ -20,15 +20,24 @@ fi
 
 echo "Building Java project"
 
+blockedCerts="$(cd "$(dirname "${BASH_SOURCE[0]}")/../blocked-certs" && pwd)"
 case "$(uname -s)" in
   CYGWIN*|MINGW32*|MSYS*|MINGW*)
     pwd=$(cygpath --windows "${PWD}")
+    blockedCerts=$(cygpath --windows "${blockedCerts}")
     ;;
   *)
     pwd="${PWD}"
     ;;
 esac
 if [[ $(docker run --user "${user}" --rm --volume "${pwd}:${home}/project" --workdir "${home}/project" "${image}" gradle clean classes | grep "BUILD SUCCESSFUL") == "" ]]; then
+    echo "Test failed" >&2
+    exit 1
+fi
+
+echo "Checking blocked certificates"
+
+if ! docker run --user "${user}" --rm --volume "${blockedCerts}:/blocked-certs:ro" "${image}" sh /blocked-certs/test/check.sh; then
     echo "Test failed" >&2
     exit 1
 fi

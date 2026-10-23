@@ -108,6 +108,37 @@ def update_file(filepath, pattern, replacement):
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(new_content)
 
+BLOCKED_CERTS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "blocked-certs", "blocked.certs")
+BLOCKED_CERTS_PATTERN = r'^([ \t]*&& BLOCKED_CERTS_SHA256=" \\\n)(?:[^"\n]*\\\n)*([ \t]*" \\)$'
+
+def read_blocked_certs():
+    with open(BLOCKED_CERTS_FILE, 'r', encoding='utf-8') as f:
+        lines = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+    if not lines or lines[0] != "Algorithm=SHA-256":
+        raise RuntimeError(f"{BLOCKED_CERTS_FILE} must start with 'Algorithm=SHA-256'")
+    fingerprints = lines[1:]
+    for fingerprint in fingerprints:
+        if not re.fullmatch(r"[0-9A-F]{64}", fingerprint):
+            raise RuntimeError(f"{BLOCKED_CERTS_FILE} has an invalid SHA-256 fingerprint: '{fingerprint}'")
+    if len(set(fingerprints)) != len(fingerprints):
+        raise RuntimeError(f"{BLOCKED_CERTS_FILE} has duplicate fingerprints")
+    return sorted(fingerprints)
+
+def update_blocked_certs_dockerfiles():
+    fingerprints = read_blocked_certs()
+    for dir_name in sorted(os.listdir('.')):
+        filepath = os.path.join(dir_name, "Dockerfile")
+        if not dir_name.startswith("jdk") or not os.path.exists(filepath):
+            continue
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+        if len(re.findall(BLOCKED_CERTS_PATTERN, content, flags=re.MULTILINE)) != 1:
+            raise RuntimeError(f"{filepath} must have exactly one BLOCKED_CERTS_SHA256 block")
+        update_file(filepath, BLOCKED_CERTS_PATTERN,
+                    lambda m: m.group(1) + "".join(f"        {fingerprint} \\\n" for fingerprint in fingerprints) + m.group(2))
+    print(f"Blocked certificates: {len(fingerprints)} fingerprints from {BLOCKED_CERTS_FILE}")
+    print()
+
 def fetch_graalvm_release_info(jdk_version):
     tag_name, artifact_version, jdk_release_version, amd64_url, aarch64_url = get_graalvm_info(jdk_version)
     amd64_sha = get_sha256(f"{amd64_url}.sha256")
@@ -150,6 +181,9 @@ def main():
         sys.exit(1)
 
     base_version = int(base_version_str)
+
+    update_blocked_certs_dockerfiles()
+
     gradle_version = get_gradle_version(base_version_str)
 
     print(f"Base version: {base_version_str}")
