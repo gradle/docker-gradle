@@ -53,47 +53,50 @@ def get_sha256(url):
             return calculate_sha256(binary_url)
         raise
 
-GRAALVM_RELEASES_URL = "https://api.github.com/repos/graalvm/graalvm-ce-builds/releases?per_page=100"
-GRAALVM_ASSET_PATTERN = re.compile(
-    r"^graalvm-community-jdk-(?P<artifact_version>.+)_linux-(?P<architecture>x64|aarch64)_bin\.tar\.gz$"
+LIBERICA_NIK_RELEASES_URL = "https://api.github.com/repos/bell-sw/LibericaNIK/releases?per_page=100"
+LIBERICA_NIK_ASSET_PATTERN = re.compile(
+    r"^bellsoft-liberica-vm-openjdk(?P<java_version>\d+(?:\.\d+)*\+\d+)-"
+    r"(?P<nik_version>\d+(?:\.\d+)*\+\d+)-linux-(?P<architecture>amd64|aarch64)\.tar\.gz$"
 )
-GRAALVM_TAG_PATTERN = re.compile(r"^(?:jdk|graal)-(?P<version>\d+(?:\.\d+)+)$")
 
-def get_graalvm_info(jdk_version):
-    matching_releases = []
-    url = f"{GRAALVM_RELEASES_URL}&page=1"
+def get_liberica_nik_releases():
+    releases = []
+    url = LIBERICA_NIK_RELEASES_URL
     while url:
-        response = requests.get(url, timeout=10, headers=github_headers(url))
+        response = requests.get(url, timeout=30, headers=github_headers(url))
         response.raise_for_status()
-        releases = response.json()
+        releases.extend(response.json())
         url = response.links.get('next', {}).get('url')
-        for release in releases:
-            if release.get('draft') or release.get('prerelease'):
-                continue
-            tag_match = GRAALVM_TAG_PATTERN.match(release['tag_name'])
-            if not tag_match:
-                continue
-            matching_assets = {}
-            for asset in release.get('assets', []):
-                match = GRAALVM_ASSET_PATTERN.match(asset['name'])
-                if not match:
-                    continue
-                artifact_version = match.group('artifact_version')
-                jdk_release_version = artifact_version.rsplit('-', 1)[-1]
-                if jdk_release_version == jdk_version or jdk_release_version.startswith(f"{jdk_version}."):
-                    matching_assets[match.group('architecture')] = (asset, artifact_version, jdk_release_version)
-            if {'x64', 'aarch64'} <= matching_assets.keys():
-                amd64_asset, artifact_version, jdk_release_version = matching_assets['x64']
-                aarch64_asset, aarch64_artifact_version, aarch64_jdk_release_version = matching_assets['aarch64']
-                if artifact_version != aarch64_artifact_version or jdk_release_version != aarch64_jdk_release_version:
-                    continue
-                version = tuple(int(part) for part in tag_match.group('version').split('.'))
-                matching_releases.append((version, release['tag_name'], artifact_version, jdk_release_version, amd64_asset, aarch64_asset))
-    if not matching_releases:
-        raise Exception(f"No GraalVM release found for JDK {jdk_version}")
+    return releases
 
-    _, tag_name, artifact_version, jdk_release_version, amd64_asset, aarch64_asset = max(matching_releases, key=lambda release: release[0])
-    return tag_name, artifact_version, jdk_release_version, amd64_asset['browser_download_url'], aarch64_asset['browser_download_url']
+def nik_version_key(version):
+    release, build = version.split('+')
+    parts = [int(part) for part in release.split('.')]
+    return tuple(parts + [0] * (4 - len(parts))), int(build)
+
+def get_liberica_nik_info(jdk_version, releases):
+    candidates = []
+    for release in releases:
+        if release.get('draft') or release.get('prerelease'):
+            continue
+        bundles = {}
+        for asset in release.get('assets', []):
+            match = LIBERICA_NIK_ASSET_PATTERN.fullmatch(asset['name'])
+            if not match:
+                continue
+            java_version = match['java_version']
+            if java_version.split('+')[0].split('.')[0] != jdk_version:
+                continue
+            nik_version = match['nik_version']
+            bundles.setdefault((java_version, nik_version), {})[match['architecture']] = asset
+        for (java_version, nik_version), assets in bundles.items():
+            if {'amd64', 'aarch64'} <= assets.keys():
+                key = (nik_version_key(java_version), nik_version_key(nik_version))
+                candidates.append((key, java_version, release['tag_name'], nik_version, assets))
+    if not candidates:
+        raise RuntimeError(f"No Liberica NIK standard Linux release for both architectures found for JDK {jdk_version}")
+    _, java_version, tag_name, nik_version, assets = max(candidates, key=lambda candidate: candidate[0])
+    return java_version, tag_name, nik_version, assets
 
 def update_file(filepath, pattern, replacement):
     if not os.path.exists(filepath):
@@ -108,37 +111,31 @@ def update_file(filepath, pattern, replacement):
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(new_content)
 
-def fetch_graalvm_release_info(jdk_version):
-    tag_name, artifact_version, jdk_release_version, amd64_url, aarch64_url = get_graalvm_info(jdk_version)
-    amd64_sha = get_sha256(f"{amd64_url}.sha256")
-    aarch64_sha = get_sha256(f"{aarch64_url}.sha256")
+def fetch_liberica_nik_release_info(jdk_version, releases):
+    java_version, tag_name, nik_version, assets = get_liberica_nik_info(jdk_version, releases)
+    hashes = []
+    for architecture in ('amd64', 'aarch64'):
+        asset = assets[architecture]
+        digest = asset.get('digest') or ''
+        if re.fullmatch(r'sha256:[0-9a-fA-F]{64}', digest):
+            sha = digest.split(':')[1].lower()
+        else:
+            sha = calculate_sha256(asset['browser_download_url'])
+        hashes.append(sha)
+    print(f"Latest Liberica NIK for JDK {jdk_version}: {nik_version} (Java {java_version})")
+    return java_version, tag_name, nik_version, *hashes
 
-    print(f"Latest Graal {jdk_version} release is {tag_name}")
-    print(f"Graal {jdk_version} AMD64 hash is {amd64_sha}")
-    print(f"Graal {jdk_version} AARCH64 hash is {aarch64_sha}")
-    print()
-
-    return jdk_release_version, tag_name, artifact_version, amd64_sha, aarch64_sha
-
-def update_graalvm_dockerfiles(dir_names, version, tag_name, artifact_version, amd64_sha, aarch64_sha, env_prefix=""):
+def update_liberica_nik_dockerfiles(dir_names, version, tag_name, nik_version, amd64_sha, aarch64_sha):
     for dir_name in dir_names:
         filepath = os.path.join(dir_name, "Dockerfile")
-        if env_prefix:
-            java_version = f"${{JAVA_{env_prefix}_VERSION}}"
-            update_file(filepath, rf"JAVA_{env_prefix}_VERSION=\S+", f"JAVA_{env_prefix}_VERSION={version}")
-            update_file(filepath, rf"GRAALVM_{env_prefix}_AMD64_DOWNLOAD_SHA256=\S+", f"GRAALVM_{env_prefix}_AMD64_DOWNLOAD_SHA256={amd64_sha}")
-            update_file(filepath, rf"GRAALVM_{env_prefix}_AARCH64_DOWNLOAD_SHA256=\S+", f"GRAALVM_{env_prefix}_AARCH64_DOWNLOAD_SHA256={aarch64_sha}")
-        else:
-            java_version = "${JAVA_VERSION}"
-            update_file(filepath, r"ENV JAVA_VERSION=\S+", f"ENV JAVA_VERSION={version}")
-            update_file(filepath, r"GRAALVM_AMD64_DOWNLOAD_SHA256=\S+", f"GRAALVM_AMD64_DOWNLOAD_SHA256={amd64_sha}")
-            update_file(filepath, r"GRAALVM_AARCH64_DOWNLOAD_SHA256=\S+", f"GRAALVM_AARCH64_DOWNLOAD_SHA256={aarch64_sha}")
-        package_pattern = r"(?:GRAALVM_RELEASE_TAG=\S+ \\\n\s*&& GRAALVM_ARTIFACT_(?:VERSION|PREFIX)=\S+ \\\n\s*&& )?GRAALVM_PKG=https://github\.com/graalvm/graalvm-ce-builds/releases/download/[^\s]+"
-        if tag_name == f"jdk-{version}" and artifact_version == version:
-            package_replacement = f"GRAALVM_PKG=https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-{java_version}/graalvm-community-jdk-{java_version}_${{GRAALVM_ARCHITECTURE}}_bin.tar.gz"
-        else:
-            package_replacement = f"GRAALVM_RELEASE_TAG={tag_name} \\\n    && GRAALVM_ARTIFACT_VERSION={artifact_version} \\\n    && GRAALVM_PKG=https://github.com/graalvm/graalvm-ce-builds/releases/download/${{GRAALVM_RELEASE_TAG}}/graalvm-community-jdk-${{GRAALVM_ARTIFACT_VERSION}}_${{GRAALVM_ARCHITECTURE}}_bin.tar.gz"
-        update_file(filepath, package_pattern, package_replacement)
+        for name, value in (
+            ("JAVA_VERSION", version),
+            ("LIBERICA_NIK_AMD64_DOWNLOAD_SHA256", amd64_sha),
+            ("LIBERICA_NIK_AARCH64_DOWNLOAD_SHA256", aarch64_sha),
+            ("LIBERICA_NIK_RELEASE_TAG", tag_name),
+            ("LIBERICA_NIK_VERSION", nik_version),
+        ):
+            update_file(filepath, rf"{name}=\S+", f"{name}={value}")
 
 def main():
     version_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'version.txt')
@@ -171,28 +168,23 @@ def main():
     if base_version < 7:
         return
 
-    # GraalVM updates
-    graal17_info = fetch_graalvm_release_info("17")
-    update_graalvm_dockerfiles(["jdk17-noble-graal", "jdk17-resolute-graal", "jdk17-jammy-graal"], *graal17_info)
+    # Liberica NIK updates
+    nik_releases = get_liberica_nik_releases()
+    nik17_info = fetch_liberica_nik_release_info("17", nik_releases)
+    update_liberica_nik_dockerfiles(["jdk17-noble-graal", "jdk17-resolute-graal", "jdk17-jammy-graal"], *nik17_info)
 
     if base_version < 8:
         return
 
-    graal21_info = fetch_graalvm_release_info("21")
-    update_graalvm_dockerfiles(["jdk21-noble-graal", "jdk21-resolute-graal", "jdk21-jammy-graal"], *graal21_info)
+    nik21_info = fetch_liberica_nik_release_info("21", nik_releases)
+    update_liberica_nik_dockerfiles(["jdk21-noble-graal", "jdk21-resolute-graal", "jdk21-jammy-graal"], *nik21_info)
 
     if base_version < 9:
-        graal24_info = fetch_graalvm_release_info("24")
-        update_graalvm_dockerfiles(["jdk24-noble-graal"], *graal24_info)
-
-        update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], *graal21_info, env_prefix="21")
-        update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], *graal24_info, env_prefix="24")
+        nik24_info = fetch_liberica_nik_release_info("24", nik_releases)
+        update_liberica_nik_dockerfiles(["jdk24-noble-graal"], *nik24_info)
     else:
-        graal25_info = fetch_graalvm_release_info("25")
-        update_graalvm_dockerfiles(["jdk25-noble-graal", "jdk25-resolute-graal"], *graal25_info)
-
-        update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], *graal25_info, env_prefix="LTS")
-        update_graalvm_dockerfiles(["jdk-lts-and-current-graal"], *graal25_info, env_prefix="CURRENT")
+        nik25_info = fetch_liberica_nik_release_info("25", nik_releases)
+        update_liberica_nik_dockerfiles(["jdk25-noble-graal", "jdk25-resolute-graal"], *nik25_info)
 
 if __name__ == "__main__":
     main()

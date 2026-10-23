@@ -151,6 +151,8 @@ def main():
 
         first_version = None
         for dir_path in directories:
+            if dir_path == "jdk-lts-and-current-graal":
+                continue
             dir_commit = get_directory_commit(commit, dir_path) if int(major) >= 8 else commit
             dockerfile = run_command(["git", "show", f"{dir_commit}:{dir_path}/Dockerfile"])
 
@@ -245,27 +247,13 @@ def main():
             if jdk == 'jdk-lts-and-current':
                 lts = ""
                 current = ""
-                if variant == 'graal':
-                    lts_match = re.search(r"JAVA_LTS_VERSION=(\S+)", dockerfile)
-                    current_match = re.search(r"JAVA_CURRENT_VERSION=(\S+)", dockerfile)
-                    if lts_match: lts = lts_match.group(1).split(".")[0]
-                    if current_match: current = current_match.group(1).split(".")[0]
-
-                    # Fallback to HOME if VERSION not found (unlikely but safer)
-                    if not lts:
-                        lts_match = re.search(r"^\s*ENV\s+JAVA_LTS_HOME=.*?(\d+)\s*$", dockerfile, re.MULTILINE)
-                        if lts_match: lts = lts_match.group(1)
-                    if not current:
-                        current_match = re.search(r"^\s*ENV\s+JAVA_CURRENT_HOME=.*?(\d+)\s*$", dockerfile, re.MULTILINE)
-                        if current_match: current = current_match.group(1)
+                lts = from_tag.split("-")[0]
+                copy_from_match = re.search(r"^\s*COPY\s+--from=(\S+)", dockerfile, re.MULTILINE | re.IGNORECASE)
+                if copy_from_match:
+                    current_from = copy_from_match.group(1)
+                    current = current_from.split(":")[-1].split("-")[0]
                 else:
-                    lts = from_tag.split("-")[0]
-                    copy_from_match = re.search(r"^\s*COPY\s+--from=(\S+)", dockerfile, re.MULTILINE | re.IGNORECASE)
-                    if copy_from_match:
-                        current_from = copy_from_match.group(1)
-                        current = current_from.split(":")[-1].split("-")[0]
-                    else:
-                        current = lts
+                    current = lts
 
                 new_versioned_tags = []
                 for t in tags:
@@ -290,7 +278,7 @@ def main():
             else:
                 arches = get_arches(from_image, arches_lookup_cache)
 
-            if jdk == 'jdk-lts-and-current' and variant != 'graal':
+            if jdk == 'jdk-lts-and-current':
                 copy_from_match = re.search(r"^\s*COPY\s+--from=(\S+)", dockerfile, re.MULTILINE | re.IGNORECASE)
                 copy_from = copy_from_match.group(1) if copy_from_match else from_image
                 copy_from_arches = get_arches(copy_from, arches_lookup_cache)
