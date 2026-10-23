@@ -134,7 +134,7 @@ def main():
         for src, repl in args.substitute:
             substitutions[src] = repl
 
-    branches = ['master', '8', '7', '6']
+    branches = ['master', '8']
     retired_tags = {
         'jdk24-corretto-al2023': True,
         'jdk24-graal-noble': True
