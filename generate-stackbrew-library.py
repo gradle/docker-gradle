@@ -116,7 +116,7 @@ def main():
             substitutions[src] = repl
             print("WARNING: using substitution, the result can't be submitted to the official images repository") # to stdout so it shows up in the generated output
 
-    branches = ['master', '8', '7', '6']
+    branches = ['master', '8', '7']
     retired_tags = {
         'jdk24-corretto-al2023': True,
         'jdk24-graal-noble': True

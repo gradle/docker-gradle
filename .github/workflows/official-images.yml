@@ -7,7 +7,6 @@ on:
       - "master"
       - "8"
       - "7"
-      - "6"
   pull_request:
 
 permissions: {}
