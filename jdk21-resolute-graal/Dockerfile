@@ -76,35 +76,37 @@ RUN set -o errexit -o nounset \
     && which svn
 
 ENV JAVA_HOME=/opt/java/graalvm
-ENV JAVA_VERSION=21.0.2
+ENV JAVA_VERSION=21.0.12.1+2
 RUN set -o errexit -o nounset \
     && mkdir /opt/java \
     \
-    && echo "Downloading GraalVM" \
-    && GRAALVM_AMD64_DOWNLOAD_SHA256=b048069aaa3a99b84f5b957b162cc181a32a4330cbc35402766363c5be76ae48 \
-    && GRAALVM_AARCH64_DOWNLOAD_SHA256=a34be691ce68f0acf4655c7c6c63a9a49ed276a11859d7224fd94fc2f657cd7a \
+    && echo "Downloading Liberica NIK" \
+    && LIBERICA_NIK_AMD64_DOWNLOAD_SHA256=2d8dea534797f5056155ea34415a9ea6cb95f1c0e0bd372f286709d6424b0823 \
+    && LIBERICA_NIK_AARCH64_DOWNLOAD_SHA256=64ca37db6eab667bc3b822e1f7b49249997637e21d72b41469ae85d40f689e7c \
     && ARCHITECTURE=$(dpkg --print-architecture) \
-    && if [ "${ARCHITECTURE}" = "amd64" ]; then GRAALVM_ARCHITECTURE=linux-x64; fi \
-    && if [ "${ARCHITECTURE}" = "arm64" ]; then GRAALVM_ARCHITECTURE=linux-aarch64; fi \
-    && GRAALVM_PKG=https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${JAVA_VERSION}/graalvm-community-jdk-${JAVA_VERSION}_${GRAALVM_ARCHITECTURE}_bin.tar.gz \
-    && wget --no-verbose --output-document=graalvm.tar.gz "${GRAALVM_PKG}" \
+    && if [ "${ARCHITECTURE}" = "amd64" ]; then LIBERICA_NIK_ARCHITECTURE=amd64; fi \
+    && if [ "${ARCHITECTURE}" = "arm64" ]; then LIBERICA_NIK_ARCHITECTURE=aarch64; fi \
+    && LIBERICA_NIK_RELEASE_TAG=23.1.12.1+1-21.0.12.1+2 \
+    && LIBERICA_NIK_VERSION=23.1.12.1+1 \
+    && LIBERICA_NIK_PKG=https://github.com/bell-sw/LibericaNIK/releases/download/${LIBERICA_NIK_RELEASE_TAG}/bellsoft-liberica-vm-openjdk${JAVA_VERSION}-${LIBERICA_NIK_VERSION}-linux-${LIBERICA_NIK_ARCHITECTURE}.tar.gz \
+    && wget --no-verbose --output-document=liberica-nik.tar.gz "${LIBERICA_NIK_PKG}" \
     \
-    && echo "Checking GraalVM download hash" \
-    && if [ "${ARCHITECTURE}" = "amd64" ]; then GRAALVM_DOWNLOAD_SHA256="${GRAALVM_AMD64_DOWNLOAD_SHA256}"; fi \
-    && if [ "${ARCHITECTURE}" = "arm64" ]; then GRAALVM_DOWNLOAD_SHA256="${GRAALVM_AARCH64_DOWNLOAD_SHA256}"; fi \
-    && echo "${GRAALVM_DOWNLOAD_SHA256} *graalvm.tar.gz" | sha256sum --check - \
+    && echo "Checking Liberica NIK download hash" \
+    && if [ "${ARCHITECTURE}" = "amd64" ]; then LIBERICA_NIK_DOWNLOAD_SHA256="${LIBERICA_NIK_AMD64_DOWNLOAD_SHA256}"; fi \
+    && if [ "${ARCHITECTURE}" = "arm64" ]; then LIBERICA_NIK_DOWNLOAD_SHA256="${LIBERICA_NIK_AARCH64_DOWNLOAD_SHA256}"; fi \
+    && echo "${LIBERICA_NIK_DOWNLOAD_SHA256} *liberica-nik.tar.gz" | sha256sum --check - \
     \
-    && echo "Installing GraalVM" \
-    && tar --extract --gunzip --file graalvm.tar.gz \
-    && rm graalvm.tar.gz \
-    && mv graalvm-* "${JAVA_HOME}" \
+    && echo "Installing Liberica NIK" \
+    && mkdir "${JAVA_HOME}" \
+    && tar --extract --gunzip --file liberica-nik.tar.gz --strip-components=1 --directory "${JAVA_HOME}" \
+    && rm liberica-nik.tar.gz \
     && for bin in "$JAVA_HOME/bin/"*; do \
         base="$(basename "$bin")"; \
         [ ! -e "/usr/bin/$base" ]; \
         update-alternatives --install "/usr/bin/${base}" "${base}" "${bin}" 1; \
     done \
     \
-    && echo "Testing GraalVM installation" \
+    && echo "Testing Liberica NIK installation" \
     && java --version \
     && javac --version \
     && native-image --version
