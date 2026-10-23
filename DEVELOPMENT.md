@@ -6,7 +6,7 @@ This repository contains the infrastructure for building and maintaining officia
 
 The following Python scripts are used for repository maintenance:
 
-*   `update.py`: Fetches the latest Gradle and GraalVM versions and updates all `Dockerfile`s and CI configurations accordingly.
+*   `update.py`: Fetches the latest Gradle and Liberica Native Image Kit (NIK) versions and updates all `Dockerfile`s and CI configurations accordingly.
 *   `generate-stackbrew-library.py`: Generates the library manifest file in the format required by the Docker official images repository.
 
 ### Prerequisites

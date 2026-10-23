@@ -19,6 +19,12 @@ Maintained by the [Gradle team](https://github.com/gradle/docker-gradle) as an [
 
 See all tags on [Docker Hub](https://hub.docker.com/_/gradle/tags).
 
+### Native Image variants
+
+The `-graal` variants use [BellSoft Liberica Native Image Kit (NIK)](https://bell-sw.com/pages/downloads/native-image-kit/), an open-source distribution of OpenJDK and GraalVM with the `native-image` compiler included. The existing image tags and `/opt/java/graalvm` installation paths are retained for compatibility. These images use the standard Linux bundle for AMD64 and ARM64.
+
+Liberica NIK provides maintained Java 17 and 21 distributions, replacing the discontinued upstream GraalVM Community Edition binaries for those Java versions. NIK's OpenJDK and GraalVM components use GPLv2 with the Classpath Exception, together with applicable component licenses; see the [NIK license](https://bell-sw.com/liberica_nik_eula/).
+
 ### Combo images
 
 > :warning: **Note:** As of the Java 25 release, no combo images are built for Gradle 8 any more, this section is retained to document the existing images only.

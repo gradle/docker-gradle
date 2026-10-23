@@ -18,7 +18,9 @@ if [[ "${version}" != "${expectedGradleVersion}" ]]; then
     exit 1
 fi
 
-echo "Building Graal project"
+docker run --user "${user}" --rm "${image}" sh -c 'native-image --version | grep -F Liberica'
+
+echo "Building Native Image project with Liberica NIK"
 
 case "$(uname -s)" in
   CYGWIN*|MINGW32*|MSYS*|MINGW*)
