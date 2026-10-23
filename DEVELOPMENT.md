@@ -39,6 +39,12 @@ Arguments can be passed to the scripts as well:
 ./toolbox.sh generate-stackbrew-library.py --substitute <old_sha> <new_sha>
 ```
 
+The manifest generator selects its remote in this order: explicit `--remote <name>`, the current branch's tracking remote, `origin`, then a remote pointing to `gradle/docker-gradle`. Detached HEAD checkouts skip tracking-remote selection. All release branches must be fetched from the selected remote; local branches are not used as fallbacks.
+
+```bash
+./toolbox.sh generate-stackbrew-library.py --remote origin
+```
+
 ## Toolbox Docker Image
 
 The toolbox image is defined in `toolbox/Dockerfile`. It is based on `python:3-alpine` and includes:
