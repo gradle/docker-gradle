@@ -76,18 +76,18 @@ RUN set -o errexit -o nounset \
     && which svn
 
 ENV JAVA_HOME=/opt/java/graalvm
-ENV JAVA_VERSION=25.0.4.1+2
+ENV JAVA_VERSION=25.0.5.0.3+6
 RUN set -o errexit -o nounset \
     && mkdir /opt/java \
     \
     && echo "Downloading Liberica NIK" \
-    && LIBERICA_NIK_AMD64_DOWNLOAD_SHA256=66f1fb47df32c7c81e0a1adca5546ddcf208b31311d95638e2fc38e8fa610a21 \
-    && LIBERICA_NIK_AARCH64_DOWNLOAD_SHA256=9ebc5f8b6fbd3a17b762e416ea267f3b239b0c91ff020572d1c6753aaaaa696b \
+    && LIBERICA_NIK_AMD64_DOWNLOAD_SHA256=127bba6fbec0e106325d7c5b9124a16bfdf6a2c787624273c145a08e65f6889d \
+    && LIBERICA_NIK_AARCH64_DOWNLOAD_SHA256=ac01657375e09552e26344e1b90068ad21161cc50cd4dc6d578e2dbf2894e843 \
     && ARCHITECTURE=$(dpkg --print-architecture) \
     && if [ "${ARCHITECTURE}" = "amd64" ]; then LIBERICA_NIK_ARCHITECTURE=amd64; fi \
     && if [ "${ARCHITECTURE}" = "arm64" ]; then LIBERICA_NIK_ARCHITECTURE=aarch64; fi \
-    && LIBERICA_NIK_RELEASE_TAG=25.0.4.1+1-25.0.4.1+2 \
-    && LIBERICA_NIK_VERSION=25.0.4.1+1 \
+    && LIBERICA_NIK_RELEASE_TAG=25.0.5.0.3+1-25.0.5.0.3+6 \
+    && LIBERICA_NIK_VERSION=25.0.5.0.3+1 \
     && LIBERICA_NIK_PKG=https://github.com/bell-sw/LibericaNIK/releases/download/${LIBERICA_NIK_RELEASE_TAG}/bellsoft-liberica-vm-openjdk${JAVA_VERSION}-${LIBERICA_NIK_VERSION}-linux-${LIBERICA_NIK_ARCHITECTURE}.tar.gz \
     && wget --no-verbose --output-document=liberica-nik.tar.gz "${LIBERICA_NIK_PKG}" \
     \
