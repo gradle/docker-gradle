@@ -13,3 +13,4 @@ updates:
       interval: "daily"
     labels:
       - "@dev-productivity"
+      - "dependencies"
